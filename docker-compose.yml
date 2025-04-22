@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./tibianity-backend
+      dockerfile: Dockerfile
+    # BORRAMOS 'ports' porque Traefik manejará el acceso
+    # ports:
+    #  - "5000:5000"
+    # Quitamos env_file o nos aseguramos que MONGO_URI no cause conflicto
+    # env_file:
+    #   - ./tibianity-backend/.env
+    environment:
+      # Sobreescribimos MONGO_URI para apuntar al contenedor mongo
+      # Cambia 'tibianityDb' si tu aplicación espera otro nombre de DB
+      MONGO_URI: mongodb://mongo:27017/tibianityDb
+      # ¡Añadimos la URL correcta del frontend para CORS!
+      FRONTEND_URL: https://tibianity.es # Actualizado a HTTPS por defecto
+      # Credenciales Google OAuth
+      GOOGLE_CLIENT_ID: 630703062932-5e1tb4i9teqngvsafsh9u0m2mcdjblpd.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: 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
+      SESSION_SECRET: tibianity_session_secret_key
+      # Entorno Node (ya estaba en Dockerfile pero lo aseguramos aquí)
+      NODE_ENV: production
+      # ACTUALIZAMOS BACKEND_URL para reflejar el acceso vía Traefik/API path
+      BACKEND_URL: https://tibianity.es/api
+      # Asegúrate de incluir aquí OTRAS variables de entorno necesarias del .env
+      # Ejemplo: GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      # (O déjalas en .env y usa 'env_file' pero SIN MONGO_URI ni FRONTEND_URL)
+      # CONSIDERACIÓN: Es mejor copiar las otras variables de .env aquí
+      #              o usar un .env sin MONGO_URI con env_file.
+    volumes:
+      # - ./tibianity-backend:/app # Comentamos o eliminamos esta línea para usar el código de la imagen
+      - /app/node_modules # Evita que node_modules local sobreescriba el del contenedor
+    container_name: tibianity_backend
+    restart: unless-stopped
+    depends_on:
+      - mongo # El backend depende de que la DB esté lista
+    networks:
+      - tibianity-net
+      # CONECTAMOS BACKEND A LA RED DE TRAEFIK
+      - easypanel
+    labels:
+      # --- Instrucciones para Traefik ---
+      - "traefik.enable=true"
+      # Especificar la red que debe usar Traefik
+      - "traefik.docker.network=easypanel"
+
+      # --- Middleware: Strip Prefix /api ---
+      # (Para que el backend reciba /auth/google/callback en lugar de /api/auth/google/callback)
+      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
+
+      # --- Router para el Backend (ej: /api) ---
+      - "traefik.http.routers.tibianity-backend.rule=Host(`tibianity.es`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.tibianity-backend.entrypoints=https" # Asumimos HTTPS
+      - "traefik.http.routers.tibianity-backend.service=tibianity-backend-svc"
+      - "traefik.http.routers.tibianity-backend.tls=true"
+      - "traefik.http.routers.tibianity-backend.tls.certresolver=letsencrypt"
+      # Aplicar el middleware para quitar /api
+      - "traefik.http.routers.tibianity-backend.middlewares=api-stripprefix"
+      # Opcional: Prioridad más alta para /api que para el frontend (si es necesario)
+      # - "traefik.http.routers.tibianity-backend.priority=10"
+
+      # --- Servicio Traefik para el Backend ---
+      - "traefik.http.services.tibianity-backend-svc.loadbalancer.server.port=5000" # Puerto interno del backend
+
+  frontend:
+    build:
+      context: ./tibianity-frontend
+      dockerfile: Dockerfile
+    container_name: tibianity_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend # Asegura que el backend inicie antes (si es necesario para el frontend)
+    networks:
+      - tibianity-net
+      # CONECTAMOS A LA RED DE TRAEFIK/EASYPANEL
+      - easypanel # <-- ACTUALIZADO
+    labels:
+      # --- Instrucciones para Traefik ---
+      - "traefik.enable=true"
+      # Especificar que Traefik debe usar esta red
+      - "traefik.docker.network=easypanel" # <-- ACTUALIZADO
+
+      # --- Middleware: Redirigir HTTP a HTTPS ---
+      - "traefik.http.middlewares.tibianity-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.tibianity-https-redirect.redirectscheme.permanent=true"
+
+      # --- Router HTTP ---
+      - "traefik.http.routers.tibianity-frontend-http.rule=Host(`tibianity.es`)"
+      - "traefik.http.routers.tibianity-frontend-http.entrypoints=http"
+      - "traefik.http.routers.tibianity-frontend-http.service=tibianity-frontend-svc"
+      # Aplicar el middleware de redirección al router HTTP
+      - "traefik.http.routers.tibianity-frontend-http.middlewares=tibianity-https-redirect"
+
+      # --- Router HTTPS ---
+      - "traefik.http.routers.tibianity-frontend-https.rule=Host(`tibianity.es`)"
+      - "traefik.http.routers.tibianity-frontend-https.entrypoints=https"
+      - "traefik.http.routers.tibianity-frontend-https.service=tibianity-frontend-svc"
+      - "traefik.http.routers.tibianity-frontend-https.tls=true"
+      - "traefik.http.routers.tibianity-frontend-https.tls.certresolver=letsencrypt" # <-- ACTUALIZADO
+
+      # --- Servicio Traefik ---
+      - "traefik.http.services.tibianity-frontend-svc.loadbalancer.server.port=3001" # Puerto interno del Nginx en el contenedor frontend
+
+  mongo:
+    image: mongo:6 # O usa mongo:latest
+    container_name: tibianity_mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db # Persiste los datos en un volumen llamado mongo-data
+    networks:
+      - tibianity-net
+    # No exponemos puertos al host por defecto por seguridad
+    # ports:
+    #  - "27017:27017"
+
+# DECLARAMOS LAS REDES
+networks:
+  tibianity-net:
+    driver: bridge
+  easypanel: # <-- ACTUALIZADO
+    external: true # La red ya existe (creada por EasyPanel/Swarm)
+
+volumes:
+  mongo-data: # Define el volumen para persistir datos de MongoDB 

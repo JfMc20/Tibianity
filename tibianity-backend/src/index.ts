@@ -1,0 +1,101 @@
+import express, { Application } from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import session from 'express-session';
+import passport from './config/passport.config';
+import newsRoutes from './routes/news.routes';
+import authRoutes from './routes/auth.routes';
+import adminRoutes from './routes/admin.routes';
+import { connectDB } from './config/db';
+
+// Cargar variables de entorno
+dotenv.config();
+
+// Conectar a la base de datos
+connectDB();
+
+// Inicializar app
+const app: Application = express();
+const PORT: number = parseInt(process.env.PORT || '5000', 10);
+const SESSION_SECRET = process.env.SESSION_SECRET;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+// Verificar que SESSION_SECRET esté definido
+if (!SESSION_SECRET) {
+  console.error('Error: La variable de entorno SESSION_SECRET es requerida pero no está definida.');
+  process.exit(1); // Detener la aplicación si no hay secreto
+}
+
+// Configuración CORS mejorada
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'development'
+    ? [FRONTEND_URL, 'http://127.0.0.1:3000', 'http://localhost:3000', 'http://localhost:3001'] // Orígenes permitidos en desarrollo
+    : [FRONTEND_URL], // En producción, solo el frontend configurado
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cache-Control'],
+  credentials: true, // Importante para permitir cookies
+  maxAge: 86400, // Caché preflight por 24 horas
+  optionsSuccessStatus: 200 // Para navegadores antiguos
+};
+
+// Middlewares
+app.use(cors(corsOptions));
+app.use(express.json());
+
+// Confiar en el primer proxy (Traefik) para determinar si la conexión es segura
+app.set('trust proxy', 1);
+
+// Configurar sesiones
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    }
+  })
+);
+
+// Inicializar Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Log de solicitudes para depuración
+app.use((req, res, next) => {
+  console.log(`Solicitud recibida: ${req.method} ${req.url}`);
+  // Agregar encabezados CORS adicionales para cada respuesta
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Si es una solicitud OPTIONS prelight, responder inmediatamente
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// Rutas
+app.use('/api/news', newsRoutes);
+app.use('/auth', authRoutes);
+app.use('/admin', adminRoutes);
+
+// Ruta de prueba
+app.get('/', (_req, res) => {
+  res.json({ message: 'API de Tibianity funcionando correctamente' });
+});
+
+// Capturar errores de rutas no encontradas
+app.use((_req, res) => {
+  res.status(404).json({ message: 'Ruta no encontrada' });
+});
+
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
+  console.log(`API disponible en: http://localhost:${PORT}`);
+  console.log(`Autenticación Google disponible en: http://localhost:${PORT}/auth/google`);
+}); 

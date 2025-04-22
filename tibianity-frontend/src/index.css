@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos base para asegurar que se está aplicando CSS */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+/* Clase para ocultar scrollbar en todos los navegadores */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Keyframe animation para el efecto neón */
+@keyframes neonPulse {
+  0%, 100% {
+    text-shadow: 0 0 5px #e100ff, 0 0 10px #e100ff, 0 0 20px #e100ff;
+  }
+  50% {
+    text-shadow: 0 0 5px #e100ff, 0 0 15px #e100ff, 0 0 25px #e100ff, 0 0 30px #e100ff;
+  }
+}
+
+@layer base {
+  body {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  .neon-text-magenta {
+    @apply text-neon-magenta transition-colors duration-300 text-shadow-neon-magenta;
+  }
+  
+  .neon-link-hover {
+    @apply hover:text-neon-magenta hover:text-shadow-neon-magenta transition-all duration-300;
+  }
+  
+  .neon-active {
+    @apply text-neon-magenta text-shadow-neon-magenta animate-neon-pulse;
+  }
+} 
