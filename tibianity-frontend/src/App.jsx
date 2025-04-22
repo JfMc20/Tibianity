@@ -57,13 +57,6 @@ const ConnectionStatus = () => {
 const AppContent = () => {
   const { user, isAuthenticated, loading, error } = useAuth();
   
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log('Objeto User desde AuthContext:', JSON.stringify(user, null, 2));
-      console.log('Comparando user.email con ADMIN_EMAIL:', user.email, '===', ADMIN_EMAIL);
-    }
-  }, [isAuthenticated, user]);
-  
   // Acceder al email desde el array, usando optional chaining por seguridad
   const isAdmin = isAuthenticated && user && user.emails && user.emails[0]?.value === ADMIN_EMAIL;
 

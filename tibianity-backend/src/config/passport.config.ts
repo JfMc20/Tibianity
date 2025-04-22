@@ -13,8 +13,6 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const BACKEND_URL = process.env.BACKEND_URL; // Obtener la URL base del backend
 
-console.log(`[Passport Config] BACKEND_URL leído de process.env: ${BACKEND_URL}`);
-
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !BACKEND_URL) {
   console.error(
     'Error: Variables de entorno GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET y BACKEND_URL son requeridas'
@@ -24,7 +22,6 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !BACKEND_URL) {
 
 // Construir dinámicamente
 const callbackURL = `${BACKEND_URL}/auth/google/callback`; 
-console.log(`[Passport Config] callbackURL construida: ${callbackURL}`);
 
 // Configurar la estrategia de Google
 passport.use(
