@@ -76,23 +76,27 @@ export const AuthProvider = ({ children }) => {
       xhr.timeout = 10000; // 10 segundos de timeout
       
       xhr.onload = function() {
+        console.log('[AuthContext] xhr.onload ejecutado. Status:', xhr.status);
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const data = JSON.parse(xhr.responseText);
+            console.log('[AuthContext] /api/auth/profile devolvió éxito. Datos:', data);
             setUser(data.user);
             setIsAuthenticated(true);
+            console.log('[AuthContext] Estado actualizado: isAuthenticated=true, user=', data.user);
           } catch (e) {
-            console.error('Error al parsear respuesta:', e);
+            console.error('[AuthContext] Error al parsear respuesta:', e);
             setError('Error al procesar la respuesta del servidor');
+            setUser(null);
+            setIsAuthenticated(false);
           }
         } else {
+          console.log('[AuthContext] /api/auth/profile devolvió error o no autenticado. Status:', xhr.status);
           setUser(null);
           setIsAuthenticated(false);
           if (xhr.status === 401) {
-            // Usuario no autenticado - esto es normal
-            console.log('Usuario no autenticado');
+            console.log('[AuthContext] Usuario no autenticado (401)');
           } else {
-            // Otros errores
             setError(`Error de autenticación: ${xhr.status} ${xhr.statusText}`);
           }
         }

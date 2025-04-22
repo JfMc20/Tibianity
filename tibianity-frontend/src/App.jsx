@@ -64,7 +64,8 @@ const AppContent = () => {
     }
   }, [isAuthenticated, user]);
   
-  const isAdmin = isAuthenticated && user && user.email === ADMIN_EMAIL;
+  // Acceder al email desde el array, usando optional chaining por seguridad
+  const isAdmin = isAuthenticated && user && user.emails && user.emails[0]?.value === ADMIN_EMAIL;
 
   if (loading) {
     return (
