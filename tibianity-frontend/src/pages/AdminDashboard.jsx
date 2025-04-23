@@ -281,6 +281,44 @@ const AdminDashboard = () => {
     }
   };
 
+  // --- NUEVA FUNCION: Manejar degradación de usuario ---
+  const handleDemoteUser = async (userIdToDemote) => {
+    if (!userIdToDemote) return;
+
+    // Confirmación MUY importante
+    if (!window.confirm('¡ADVERTENCIA! ¿Estás seguro de que quieres quitar los privilegios de administrador a este usuario?')) {
+      return;
+    }
+
+    setActionLoading(userIdToDemote); // Usamos el mismo estado de carga, pero para la acción de degradar
+    setActionError(null);
+    setActionSuccess(null);
+
+    try {
+      // Llamar a la nueva API (¡AÚN NO IMPLEMENTADA EN BACKEND!)
+      const response = await apiClient.patch(`${ADMIN_API.USERS}/${userIdToDemote}/demote`);
+
+      if (response.data && response.data.success) {
+        // Actualizar el estado local 'users' para reflejar el cambio
+        setUsers(prevUsers =>
+          prevUsers.map(u =>
+            u._id === userIdToDemote ? { ...u, isAdmin: false } : u
+          )
+        );
+        setActionSuccess(`Usuario ${response.data.user?.name || ''} degradado exitosamente a usuario normal.`);
+        console.log('Usuario degradado:', response.data.user);
+      } else {
+        throw new Error(response.data?.message || 'No se pudo degradar al usuario.');
+      }
+    } catch (err) {
+      console.error('Error al degradar usuario:', err);
+      const message = err.response?.data?.message || err.message || 'Error desconocido al degradar usuario.';
+      setActionError(`Error al degradar (${userIdToDemote}): ${message}`);
+    } finally {
+      setActionLoading(null); // Terminar carga para este usuario
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -495,16 +533,30 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handlePromoteUser(listedUser._id)} // Pasar googleId
-                        disabled={isListedUserAdmin || isCurrentUser || actionLoading === listedUser._id} // Deshabilitar si ya es admin, es uno mismo, o está cargando
-                        className={`text-indigo-600 hover:text-indigo-900 disabled:text-gray-400 disabled:cursor-not-allowed ${ 
-                           actionLoading === listedUser._id ? 'animate-pulse' : ''
-                        }`}
-                      >
-                        {actionLoading === listedUser._id ? 'Promoviendo...' : (isListedUserAdmin ? '-' : 'Promover a Admin')}
-                      </button>
-                      {/* Aquí podrías añadir botones para "Degradar", "Eliminar", etc. en el futuro */}
+                      {/* Lógica condicional para mostrar botón de Promover o Degradar */}
+                      {isListedUserAdmin ? (
+                        // Si es Admin: Mostrar botón para Degradar (si no es el usuario actual)
+                        <button
+                          onClick={() => handleDemoteUser(listedUser._id)}
+                          disabled={isCurrentUser || actionLoading === listedUser._id} // Deshabilitar si es uno mismo o está cargando
+                          className={`text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed ${
+                            actionLoading === listedUser._id ? 'animate-pulse' : ''
+                          }`}
+                        >
+                          {actionLoading === listedUser._id ? 'Degradando...' : (isCurrentUser ? '-' : 'Degradar a Usuario')}
+                        </button>
+                      ) : (
+                        // Si es Usuario normal: Mostrar botón para Promover
+                        <button
+                          onClick={() => handlePromoteUser(listedUser._id)}
+                          disabled={actionLoading === listedUser._id} // Deshabilitar si está cargando (isCurrentUser ya está implícito que no aplica)
+                          className={`text-indigo-600 hover:text-indigo-900 disabled:text-gray-400 disabled:cursor-not-allowed ${
+                            actionLoading === listedUser._id ? 'animate-pulse' : ''
+                          }`}
+                        >
+                          {actionLoading === listedUser._id ? 'Promoviendo...' : 'Promover a Admin'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

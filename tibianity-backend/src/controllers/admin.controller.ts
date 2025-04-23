@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import User, { IUser } from '../models/User';
 import SessionLog from '../models/SessionLog';
 import mongoose, { Document } from 'mongoose';
+import { UserProfile } from '../types/auth.types'; // Asegurarse que esté importado
 
 /**
  * Clase de controlador para funciones administrativas
@@ -117,20 +118,14 @@ class AdminController {
    * @returns {Promise<void>}
    */
   async promoteUserToAdmin(req: Request, res: Response): Promise<void> {
-    const { userId } = req.params;
+    const { userId } = req.params; // userId es el googleId enviado por el frontend
 
-    // Verificar si el ID proporcionado es un ObjectId válido de MongoDB
-    // Usamos googleId que es lo que espera el frontend como _id
-    // if (!mongoose.Types.ObjectId.isValid(userId)) {
-    //   res.status(400).json({ success: false, message: 'ID de usuario inválido.' });
-    //   return;
-    // }
-    
     // Opcional: Verificar que el admin no se promueva a sí mismo
-    // if ((req.user as any)?.id === userId) { // Comparar googleId
-    //   res.status(400).json({ success: false, message: 'No puedes promoverte a ti mismo.' });
-    //   return;
-    // }
+    const requesterProfile = req.user as UserProfile;
+    if (requesterProfile && requesterProfile.id === userId) {
+      res.status(400).json({ success: false, message: 'No puedes promoverte a ti mismo.' });
+      return;
+    }
 
     try {
       // Buscar y actualizar el usuario directamente usando googleId
@@ -141,16 +136,16 @@ class AdminController {
       ).select('_id googleId name email photo isAdmin createdAt'); // Seleccionar campos para devolver
 
       if (!updatedUser) {
-        res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+        res.status(404).json({ success: false, message: 'Usuario no encontrado para promover.' });
         return;
       }
 
-      // Mapear el usuario actualizado al formato esperado (opcional, si difiere)
+      // Mapear el usuario actualizado al formato esperado
       const mappedUser = {
-        _id: updatedUser.googleId, // Mantener consistencia si el frontend usa googleId
+        _id: updatedUser.googleId,
         name: updatedUser.name,
         email: updatedUser.email,
-        isAdmin: updatedUser.isAdmin, // Incluir el estado actualizado
+        isAdmin: updatedUser.isAdmin,
         createdAt: updatedUser.createdAt.toISOString(),
         photo: updatedUser.photo
       };
@@ -163,6 +158,57 @@ class AdminController {
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Error interno del servidor al promover usuario.'
+      });
+    }
+  }
+
+  /**
+   * Degrada un administrador a usuario normal
+   * @param {Request} req - Objeto de solicitud Express (espera :userId en params)
+   * @param {Response} res - Objeto de respuesta Express
+   * @returns {Promise<void>}
+   */
+  async demoteAdminToUser(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params; // userId es el googleId enviado por el frontend
+
+    // MUY IMPORTANTE: Verificar que el admin no se degrade a sí mismo
+    const requesterProfile = req.user as UserProfile; // req.user es añadido por Passport
+    if (requesterProfile && requesterProfile.id === userId) {
+      res.status(400).json({ success: false, message: 'No puedes quitarte los privilegios de administrador a ti mismo.' });
+      return;
+    }
+
+    try {
+      // Buscar y actualizar el usuario directamente usando googleId
+      const updatedUser = await User.findOneAndUpdate(
+        { googleId: userId }, // Buscar por googleId
+        { $set: { isAdmin: false } }, // Establecer isAdmin a false
+        { new: true } // Devolver el documento actualizado
+      ).select('_id googleId name email photo isAdmin createdAt'); // Seleccionar campos para devolver
+
+      if (!updatedUser) {
+        res.status(404).json({ success: false, message: 'Usuario no encontrado para degradar.' });
+        return;
+      }
+
+      // Mapear el usuario actualizado al formato esperado
+      const mappedUser = {
+        _id: updatedUser.googleId,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        isAdmin: updatedUser.isAdmin, // Debería ser false ahora
+        createdAt: updatedUser.createdAt.toISOString(),
+        photo: updatedUser.photo
+      };
+
+      console.log(`✅ Usuario degradado a normal: ${updatedUser.name}`);
+      res.status(200).json({ success: true, message: 'Usuario degradado a rol normal.', user: mappedUser });
+
+    } catch (error) {
+      console.error('Error al degradar usuario:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error interno del servidor al degradar usuario.'
       });
     }
   }

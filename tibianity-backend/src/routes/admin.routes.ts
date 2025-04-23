@@ -29,4 +29,15 @@ router.patch('/users/:userId/promote',
   adminController.promoteUserToAdmin
 );
 
+/**
+ * @route PATCH /admin/users/:userId/demote
+ * @desc Degradar un administrador a usuario normal
+ * @access Privado (Solo administradores)
+ */
+router.patch('/users/:userId/demote',
+  isAuthenticated,
+  isAdmin,
+  adminController.demoteAdminToUser
+);
+
 export default router; 
