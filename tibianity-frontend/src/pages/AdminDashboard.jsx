@@ -320,20 +320,22 @@ const AdminDashboard = () => {
   };
 
   if (authLoading || loading) {
+    // Mantener el spinner de carga con fondo oscuro implícito por el contenedor padre
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-700">Cargando datos...</p>
+          <p className="mt-4 text-gray-300">Cargando datos...</p> {/* Texto más claro */}
         </div>
       </div>
     );
   }
 
   if (error) {
+    // Ajustar mensaje de error al tema oscuro
     return (
       <div className="p-4 mx-auto max-w-7xl">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Error: </strong>
           <span className="block sm:inline">{error}</span>
         </div>
@@ -342,38 +344,40 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="p-4 mx-auto max-w-7xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard Administrativo</h1>
+    // Contenedor principal con fondo oscuro y texto claro por defecto
+    <div className="p-4 mx-auto max-w-7xl text-gray-200 bg-[#060919] min-h-screen">
+      <h1 className="text-3xl font-bold text-white mb-6">Dashboard Administrativo</h1>
       
-      {/* Tarjetas de resumen */}
+      {/* Tarjetas de resumen - Estilo oscuro */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white shadow rounded-lg p-4 border-l-4 border-blue-500">
-          <h2 className="text-sm text-gray-500 uppercase">Total Usuarios</h2>
-          <p className="text-3xl font-bold text-gray-900">{metrics.totalUsers}</p>
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 border-l-4 border-blue-500">
+          <h2 className="text-sm text-gray-400 uppercase">Total Usuarios</h2>
+          <p className="text-3xl font-bold text-white">{metrics.totalUsers}</p>
         </div>
         
-        <div className="bg-white shadow rounded-lg p-4 border-l-4 border-green-500">
-          <h2 className="text-sm text-gray-500 uppercase">Sesiones Hoy</h2>
-          <p className="text-3xl font-bold text-gray-900">{metrics.sessionsToday}</p>
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 border-l-4 border-green-500">
+          <h2 className="text-sm text-gray-400 uppercase">Sesiones Hoy</h2>
+          <p className="text-3xl font-bold text-white">{metrics.sessionsToday}</p>
         </div>
         
-        <div className="bg-white shadow rounded-lg p-4 border-l-4 border-yellow-500">
-          <h2 className="text-sm text-gray-500 uppercase">Últimos 7 días</h2>
-          <p className="text-3xl font-bold text-gray-900">{metrics.sessionsLast7Days}</p>
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 border-l-4 border-yellow-500">
+          <h2 className="text-sm text-gray-400 uppercase">Últimos 7 días</h2>
+          <p className="text-3xl font-bold text-white">{metrics.sessionsLast7Days}</p>
         </div>
         
-        <div className="bg-white shadow rounded-lg p-4 border-l-4 border-purple-500">
-          <h2 className="text-sm text-gray-500 uppercase">Sesiones Totales</h2>
-          <p className="text-3xl font-bold text-gray-900">{metrics.totalSessions}</p>
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 border-l-4 border-purple-500">
+          <h2 className="text-sm text-gray-400 uppercase">Sesiones Totales</h2>
+          <p className="text-3xl font-bold text-white">{metrics.totalSessions}</p>
         </div>
       </div>
       
-      {/* Filtros */}
-      <div className="bg-white shadow rounded-lg p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Filtros</h2>
+      {/* Filtros - Estilo oscuro */}
+      <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="flex flex-col">
-            <label htmlFor="startDate" className="text-sm text-gray-600 mb-1">Fecha inicio</label>
+            <label htmlFor="startDate" className="text-sm text-gray-400 mb-1">Fecha inicio</label>
+            {/* TODO: Estilizar DatePicker para tema oscuro si es necesario */}
             <DatePicker
               id="startDate"
               selected={startDate}
@@ -381,14 +385,15 @@ const AdminDashboard = () => {
               selectsStart
               startDate={startDate}
               endDate={endDate}
-              className="p-2 border border-gray-300 rounded"
+              className="p-2 border border-[#2e2e3a] rounded bg-[#1e2232] text-white focus:border-blue-500 focus:ring-blue-500"
               dateFormat="dd/MM/yyyy"
               locale={es}
             />
           </div>
           
           <div className="flex flex-col">
-            <label htmlFor="endDate" className="text-sm text-gray-600 mb-1">Fecha fin</label>
+            <label htmlFor="endDate" className="text-sm text-gray-400 mb-1">Fecha fin</label>
+             {/* TODO: Estilizar DatePicker para tema oscuro si es necesario */}
             <DatePicker
               id="endDate"
               selected={endDate}
@@ -397,23 +402,23 @@ const AdminDashboard = () => {
               startDate={startDate}
               endDate={endDate}
               minDate={startDate}
-              className="p-2 border border-gray-300 rounded"
+              className="p-2 border border-[#2e2e3a] rounded bg-[#1e2232] text-white focus:border-blue-500 focus:ring-blue-500"
               dateFormat="dd/MM/yyyy"
               locale={es}
             />
           </div>
           
           <div className="flex flex-col">
-            <label htmlFor="userFilter" className="text-sm text-gray-600 mb-1">Usuario</label>
+            <label htmlFor="userFilter" className="text-sm text-gray-400 mb-1">Usuario</label>
             <select
               id="userFilter"
               value={selectedUser}
               onChange={handleUserChange}
-              className="p-2 border border-gray-300 rounded"
+              className="p-2 border border-[#2e2e3a] rounded bg-[#1e2232] text-white focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="all">Todos los usuarios</option>
+              <option value="all" className="bg-[#1e2232] text-white">Todos los usuarios</option>
               {users.map(user => (
-                <option key={user._id} value={user._id}>
+                <option key={user._id} value={user._id} className="bg-[#1e2232] text-white">
                   {user.name} ({user.email})
                 </option>
               ))}
@@ -422,11 +427,12 @@ const AdminDashboard = () => {
         </div>
       </div>
       
-      {/* Gráficos */}
+      {/* Gráficos - Contenedor oscuro */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white shadow rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">Sesiones por Fecha</h2>
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4">
+          <h2 className="text-xl font-semibold mb-4 text-white">Sesiones por Fecha</h2>
           <div className="h-64">
+            {/* TODO: Ajustar colores de Chart.js para tema oscuro */}
             <Bar 
               data={chartData} 
               options={{
@@ -435,122 +441,142 @@ const AdminDashboard = () => {
                 plugins: {
                   legend: {
                     position: 'top',
+                    labels: { color: '#cbd5e1' } // Color leyenda
                   },
                   title: {
                     display: true,
                     text: 'Número de sesiones por fecha',
+                    color: '#e2e8f0' // Color título
                   },
                 },
+                scales: {
+                  x: {
+                    ticks: { color: '#94a3b8' }, // Color ticks eje X
+                    grid: { color: '#374151' } // Color grid eje X
+                  },
+                  y: {
+                    ticks: { color: '#94a3b8' }, // Color ticks eje Y
+                    grid: { color: '#374151' } // Color grid eje Y
+                  }
+                }
               }}
             />
           </div>
         </div>
         
-        <div className="bg-white shadow rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">Tendencia de Sesiones</h2>
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4">
+          <h2 className="text-xl font-semibold mb-4 text-white">Tendencia de Sesiones</h2>
           <div className="h-64">
+             {/* TODO: Ajustar colores de Chart.js para tema oscuro */}
             <Line
               data={lineChartData}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
+                 plugins: {
                   legend: {
                     position: 'top',
+                    labels: { color: '#cbd5e1' } // Color leyenda
                   },
                   title: {
                     display: true,
                     text: 'Tendencia de sesiones por fecha',
+                    color: '#e2e8f0' // Color título
                   },
                 },
+                scales: {
+                  x: {
+                    ticks: { color: '#94a3b8' }, // Color ticks eje X
+                    grid: { color: '#374151' } // Color grid eje X
+                  },
+                  y: {
+                    ticks: { color: '#94a3b8' }, // Color ticks eje Y
+                    grid: { color: '#374151' } // Color grid eje Y
+                  }
+                }
               }}
             />
           </div>
         </div>
       </div>
       
-      {/* Mostrar mensajes de éxito/error de acciones */}
+      {/* Mostrar mensajes de éxito/error de acciones - Estilo oscuro */}
       {actionSuccess && (
-        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+        <div className="mb-4 bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded relative" role="alert">
           {actionSuccess}
         </div>
       )}
       {actionError && (
-        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <div className="mb-4 bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded relative" role="alert">
           {actionError}
         </div>
       )}
 
-      {/* Tabla de usuarios (Modificada) */}
-      <div className="bg-white shadow rounded-lg p-4">
-        <h2 className="text-xl font-semibold mb-4">Usuarios Registrados</h2>
+      {/* Tabla de usuarios - Contenedor oscuro */}
+      <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4">
+        <h2 className="text-xl font-semibold mb-4 text-white">Usuarios Registrados</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-[#2e2e3a]">
+            <thead className="bg-[#1e2232]">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Registro</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sesiones</th>
-                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Nombre</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha Registro</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sesiones</th>
+                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Rol
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.map(listedUser => { // Renombrar variable para evitar conflicto
-                const userSessions = sessions.filter(session => session.userId === listedUser._id);
-                // Determinar si el botón debe estar deshabilitado
-                // Comparar usando googleId (asumiendo que currentUser.id es googleId)
-                const isCurrentUser = currentUser?.id === listedUser._id; 
+            <tbody className="bg-[#111118] divide-y divide-[#2e2e3a]">
+              {users.map(listedUser => { 
+                const isCurrentUser = currentUser?.id === listedUser._id;
                 const isListedUserAdmin = listedUser.isAdmin === true;
+                const userSessions = sessions.filter(session => session.userId === listedUser._id); // Mover cálculo de sesiones aquí si no se hizo antes
 
                 return (
                   <tr key={listedUser._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{listedUser.name}</div>
+                      <div className="text-sm font-medium text-white">{listedUser.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{listedUser.email}</div>
+                      <div className="text-sm text-gray-400">{listedUser.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {/* Añadir validación por si createdAt no existe */}
+                      <div className="text-sm text-gray-400">
                         {listedUser.createdAt && isValid(parseISO(listedUser.createdAt)) ? format(parseISO(listedUser.createdAt), 'dd/MM/yyyy') : 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{userSessions.length}</div>
+                      <div className="text-sm text-gray-400">{userSessions.length}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ 
-                        isListedUserAdmin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
+                        isListedUserAdmin ? 'bg-green-900/50 text-green-300' : 'bg-gray-700/50 text-gray-300'
+                      }`}> {/* Badges oscuros */}
                         {isListedUserAdmin ? 'Admin' : 'Usuario'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {/* Lógica condicional para mostrar botón de Promover o Degradar */}
+                      {/* Botones de acción (colores ya ajustados antes) */}
                       {isListedUserAdmin ? (
-                        // Si es Admin: Mostrar botón para Degradar (si no es el usuario actual)
                         <button
                           onClick={() => handleDemoteUser(listedUser._id)}
-                          disabled={isCurrentUser || actionLoading === listedUser._id} // Deshabilitar si es uno mismo o está cargando
-                          className={`text-red-600 hover:text-red-900 disabled:text-gray-400 disabled:cursor-not-allowed ${
+                          disabled={isCurrentUser || actionLoading === listedUser._id}
+                          className={`text-red-500 hover:text-red-400 disabled:text-gray-500 disabled:cursor-not-allowed ${
                             actionLoading === listedUser._id ? 'animate-pulse' : ''
                           }`}
                         >
                           {actionLoading === listedUser._id ? 'Degradando...' : (isCurrentUser ? '-' : 'Degradar a Usuario')}
                         </button>
                       ) : (
-                        // Si es Usuario normal: Mostrar botón para Promover
                         <button
                           onClick={() => handlePromoteUser(listedUser._id)}
-                          disabled={actionLoading === listedUser._id} // Deshabilitar si está cargando (isCurrentUser ya está implícito que no aplica)
-                          className={`text-indigo-600 hover:text-indigo-900 disabled:text-gray-400 disabled:cursor-not-allowed ${
+                          disabled={actionLoading === listedUser._id}
+                          className={`text-indigo-400 hover:text-indigo-300 disabled:text-gray-500 disabled:cursor-not-allowed ${
                             actionLoading === listedUser._id ? 'animate-pulse' : ''
                           }`}
                         >
