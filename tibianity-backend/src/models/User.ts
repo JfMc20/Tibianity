@@ -8,6 +8,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   photo: string;
+  isAdmin: boolean;
   createdAt: Date;
 }
 
@@ -30,6 +31,10 @@ const UserSchema: Schema = new Schema({
   },
   photo: {
     type: String
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,

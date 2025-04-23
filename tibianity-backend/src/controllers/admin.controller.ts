@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 import SessionLog from '../models/SessionLog';
 import mongoose, { Document } from 'mongoose';
 
@@ -16,13 +16,14 @@ class AdminController {
   async getAllUsers(req: Request, res: Response): Promise<void> {
     try {
       // Obtener usuarios con proyección (excluyendo datos sensibles si fuera necesario)
-      const users = await User.find().select('_id googleId name email photo createdAt');
+      const users = await User.find().select('_id googleId name email photo isAdmin createdAt');
       
       // Mapear los usuarios al formato esperado por el frontend
       const mappedUsers = users.map(user => ({
         _id: user.googleId, // El frontend espera _id como identificador único
         name: user.name,
         email: user.email,
+        isAdmin: user.isAdmin,
         createdAt: user.createdAt.toISOString(),
         photo: user.photo
       }));
@@ -90,7 +91,8 @@ class AdminController {
         
         return {
           _id: sessionDocument._id.toString(),
-          userId: user.googleId, // El frontend espera usar googleId como userId
+          userId: user?.googleId || 'Desconocido',
+          userName: user?.name || 'Desconocido',
           startTime: sessionDocument.loginDate.toISOString(),
           endTime: new Date(sessionDocument.loginDate.getTime() + 1800000).toISOString(), // Estimamos 30 minutos por sesión
           duration: 30 // Duración estimada en minutos
@@ -104,6 +106,63 @@ class AdminController {
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Error interno del servidor'
+      });
+    }
+  }
+
+  /**
+   * Promueve un usuario a administrador
+   * @param {Request} req - Objeto de solicitud Express (espera :userId en params)
+   * @param {Response} res - Objeto de respuesta Express
+   * @returns {Promise<void>}
+   */
+  async promoteUserToAdmin(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params;
+
+    // Verificar si el ID proporcionado es un ObjectId válido de MongoDB
+    // Usamos googleId que es lo que espera el frontend como _id
+    // if (!mongoose.Types.ObjectId.isValid(userId)) {
+    //   res.status(400).json({ success: false, message: 'ID de usuario inválido.' });
+    //   return;
+    // }
+    
+    // Opcional: Verificar que el admin no se promueva a sí mismo
+    // if ((req.user as any)?.id === userId) { // Comparar googleId
+    //   res.status(400).json({ success: false, message: 'No puedes promoverte a ti mismo.' });
+    //   return;
+    // }
+
+    try {
+      // Buscar y actualizar el usuario directamente usando googleId
+      const updatedUser = await User.findOneAndUpdate(
+        { googleId: userId }, // Buscar por googleId
+        { $set: { isAdmin: true } }, // Establecer isAdmin a true
+        { new: true } // Devolver el documento actualizado
+      ).select('_id googleId name email photo isAdmin createdAt'); // Seleccionar campos para devolver
+
+      if (!updatedUser) {
+        res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+        return;
+      }
+
+      // Mapear el usuario actualizado al formato esperado (opcional, si difiere)
+      const mappedUser = {
+        _id: updatedUser.googleId, // Mantener consistencia si el frontend usa googleId
+        name: updatedUser.name,
+        email: updatedUser.email,
+        isAdmin: updatedUser.isAdmin, // Incluir el estado actualizado
+        createdAt: updatedUser.createdAt.toISOString(),
+        photo: updatedUser.photo
+      };
+
+      console.log(`✅ Usuario promovido a admin: ${updatedUser.name}`);
+      res.status(200).json({ success: true, message: 'Usuario promovido a administrador.', user: mappedUser });
+
+    } catch (error) {
+      console.error('Error al promover usuario:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error interno del servidor al promover usuario.'
       });
     }
   }

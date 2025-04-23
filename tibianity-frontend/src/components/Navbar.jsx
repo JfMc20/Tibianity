@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { isAdminEmail } from '../config/constants';
 
 /**
  * @typedef {Object} NavLinkProps
@@ -103,8 +102,8 @@ const LoginButton = () => {
     setIsHovered(false);
   };
   
-  // Comprobar si el usuario es administrador utilizando la función centralizada
-  const isAdmin = user?.isAdmin || (user?.email && isAdminEmail(user.email));
+  // Comprobar si el usuario es administrador usando solo user.isAdmin del contexto
+  const isAdmin = user?.isAdmin === true;
   
   return (
     <div className="relative group">

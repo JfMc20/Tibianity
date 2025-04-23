@@ -15,7 +15,6 @@ import LorePage from './pages/LorePage';
 import TeamPage from './pages/TeamPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ComingSoon from './components/ComingSoon/ComingSoon.jsx';
-import { ADMIN_EMAIL } from './config/constants';
 
 // Componente para verificar la conexión con el backend
 const ConnectionStatus = () => {
@@ -57,8 +56,8 @@ const ConnectionStatus = () => {
 const AppContent = () => {
   const { user, isAuthenticated, loading, error } = useAuth();
   
-  // Acceder al email desde el array, usando optional chaining por seguridad
-  const isAdmin = isAuthenticated && user && user.emails && user.emails[0]?.value === ADMIN_EMAIL;
+  // Determinar si es admin basándose en el campo isAdmin del objeto user del contexto
+  const isAdmin = user?.isAdmin === true;
 
   if (loading) {
     return (

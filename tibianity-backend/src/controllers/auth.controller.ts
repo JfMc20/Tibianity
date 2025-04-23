@@ -1,28 +1,49 @@
 import { Request, Response } from 'express';
 import { UserProfile } from '../types/auth.types';
+import User from '../models/User';
 
 // Controlador para la ruta de profile
-export const getProfile = (req: Request, res: Response) => {
+export const getProfile = async (req: Request, res: Response) => {
   // Si el usuario no está autenticado, retornar error
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+  if (!req.isAuthenticated() || !req.user) {
     return res.status(401).json({ message: 'No autorizado' });
   }
-  
-  const user = req.user as UserProfile;
-  
-  // Verificar si el usuario es administrador
-  // En el perfil de Google OAuth, los emails se obtienen como un array
-  const adminEmails = ['admin@tibianity.com', 'fraan.mujica1@gmail.com'];
-  const userEmail = user.emails && user.emails.length > 0 ? user.emails[0].value : '';
-  const isAdmin = userEmail && adminEmails.includes(userEmail);
-  
-  // Retornar los datos del usuario con información adicional
-  res.json({
-    user: {
-      ...user,
-      isAdmin
+
+  try {
+    const userProfile = req.user as UserProfile;
+    const googleId = userProfile.id;
+
+    if (!googleId) {
+      return res.status(400).json({ message: 'No se pudo obtener el ID de usuario del perfil de sesión.' });
     }
-  });
+
+    // Buscar el usuario completo en la base de datos para obtener su estado de isAdmin
+    const dbUser = await User.findOne({ googleId }).select('+isAdmin');
+
+    if (!dbUser) {
+      // Esto no debería pasar si el usuario está autenticado y pasó por el callback de Passport,
+      // pero es una comprobación de seguridad adicional.
+      return res.status(404).json({ message: 'Usuario autenticado pero no encontrado en la base de datos.' });
+    }
+
+    // Usar el valor directamente de la base de datos
+    const isAdmin = dbUser.isAdmin === true;
+
+    // Retornar los datos del perfil de sesión (req.user) junto con el estado isAdmin real de la DB
+    res.json({
+      user: {
+        ...userProfile,
+        isAdmin: isAdmin
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener perfil de usuario desde DB:', error);
+    // Devolver un error genérico, pero mantener al usuario logueado si es posible
+    // Podríamos devolver solo req.user sin isAdmin si falla la DB?
+    // Por ahora, devolvemos error 500.
+    return res.status(500).json({ message: 'Error interno al obtener detalles del perfil.' });
+  }
 };
 
 // Controlador para la ruta de logout

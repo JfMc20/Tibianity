@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
@@ -8,7 +8,7 @@ import { format, subDays, startOfDay, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ADMIN_API, isAdminEmail } from '../config/constants';
+import { ADMIN_API } from '../config/constants';
 // Importar la API simulada (solo para desarrollo)
 import { mockAPI } from '../api/mockData.js';
 
@@ -23,6 +23,12 @@ ChartJS.register(
   Legend,
   PointElement
 );
+
+// Configurar instancia de Axios para enviar credenciales (cookies)
+const apiClient = axios.create({
+  // La baseURL ya viene de ADMIN_API.USERS etc.
+  withCredentials: true // Asegura que las cookies se envíen con cada solicitud
+});
 
 // Determinar si usar la API real o simulada
 // Cambia esto a false para usar el backend real
@@ -44,49 +50,64 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null); // Para mostrar carga en botón específico
+  const [actionError, setActionError] = useState(null); // Para errores de acción
+  const [actionSuccess, setActionSuccess] = useState(null); // Para mensajes de éxito
   
   // Obtener datos de autenticación y navegación
-  const { user, isAuthenticated } = useAuth();
+  const { user: currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
-  // Verificar si el usuario tiene permisos de administrador usando la función centralizada
-  const isAdmin = user?.isAdmin || (user?.email && isAdminEmail(user.email));
+  // Calcular isAdmin basado en currentUser.isAdmin obtenido del contexto
+  const isAdmin = currentUser?.isAdmin === true;
   
   // Redirigir si no es administrador
   useEffect(() => {
-    if (!loading && !isAdmin && isAuthenticated) {
+    // Esperar a que termine la carga de autenticación antes de redirigir
+    if (!authLoading && !isAdmin && isAuthenticated) {
+      console.log("Redirigiendo por no ser admin..."); // Log de depuración
       navigate('/');
     }
-  }, [isAdmin, isAuthenticated, navigate, loading]);
+  }, [isAdmin, isAuthenticated, navigate, authLoading]);
 
   // Función para cargar los datos de usuarios
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
+      setActionError(null); // Limpiar errores anteriores
+      setActionSuccess(null);
+      setLoading(true); // Usar loading general para carga inicial
       let userData;
       if (USE_MOCK_API) {
-        userData = await mockAPI.getUsers();
+        // userData = await mockAPI.getUsers(); // Comentado por ahora
+        userData = []; // Evitar error si mockAPI no está definida
       } else {
-        const response = await axios.get(ADMIN_API.USERS);
+        // Usar apiClient configurado
+        const response = await apiClient.get(ADMIN_API.USERS);
         userData = response.data;
       }
-      setUsers(userData);
+      // Asegurarse que cada usuario tenga la propiedad isAdmin (puede ser false si no viene del backend)
+      setUsers(userData.map(u => ({ ...u, isAdmin: u.isAdmin || false })));
     } catch (err) {
       setError('Error al cargar los usuarios');
       console.error('Error al cargar usuarios:', err);
+    } finally {
+       setLoading(false); // Termina loading general
     }
-  };
+  }, []);
 
   // Función para cargar los datos de sesiones
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
       const formattedEndDate = format(endDate, 'yyyy-MM-dd');
       
       let sessionData;
       if (USE_MOCK_API) {
-        sessionData = await mockAPI.getSessions(formattedStartDate, formattedEndDate);
+        // sessionData = await mockAPI.getSessions(formattedStartDate, formattedEndDate);
+        sessionData = [];
       } else {
-        const response = await axios.get(ADMIN_API.SESSIONS, {
+        // Usar apiClient si es necesario para sesiones también
+        const response = await apiClient.get(ADMIN_API.SESSIONS, {
           params: {
             startDate: formattedStartDate,
             endDate: formattedEndDate,
@@ -97,31 +118,27 @@ const AdminDashboard = () => {
       }
       
       setSessions(sessionData);
-      setFilteredSessions(sessionData);
-    } catch (err) {
-      setError('Error al cargar las sesiones');
-      console.error('Error al cargar sesiones:', err);
-    } finally {
-      setLoading(false);
+      setFilteredSessions(sessionData); // Inicialmente mostrar todas las sesiones cargadas
+    } catch (err) { 
+      // Solo establecer error si no es un error de cancelación de Axios
+      if (!axios.isCancel(err)) {
+        setError('Error al cargar las sesiones');
+        console.error('Error al cargar sesiones:', err);
+      }
     }
-  };
+     // No establecer setLoading(false) aquí si loadUsers ya lo hace
+  }, [startDate, endDate, selectedUser]);
 
   // Cargar datos iniciales
   useEffect(() => {
-    const fetchData = async () => {
-      await loadUsers();
-      await loadSessions();
-    };
-    
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    loadUsers();
+    // loadSessions se llama en el useEffect de abajo cuando cambian las fechas
+  }, [loadUsers]); // Usar las funciones memoizadas
 
-  // Actualizar datos cuando cambian los filtros
+  // Actualizar sesiones cuando cambian las fechas o el usuario seleccionado
   useEffect(() => {
     loadSessions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate]);
+  }, [loadSessions]); // loadSessions ya tiene sus dependencias
 
   // Filtrar sesiones por usuario
   useEffect(() => {
@@ -138,13 +155,13 @@ const AdminDashboard = () => {
     const last7Days = subDays(today, 6);
 
     const sessionsToday = sessions.filter(session => {
-      const sessionDate = parseISO(session.startTime);
-      return isValid(sessionDate) && sessionDate >= today;
+      // Añadir validación antes de parsear
+      return session.startTime && isValid(parseISO(session.startTime)) && parseISO(session.startTime) >= today;
     }).length;
 
     const sessionsLast7Days = sessions.filter(session => {
-      const sessionDate = parseISO(session.startTime);
-      return isValid(sessionDate) && sessionDate >= last7Days;
+      // Añadir validación antes de parsear
+      return session.startTime && isValid(parseISO(session.startTime)) && parseISO(session.startTime) >= last7Days;
     }).length;
 
     setMetrics({
@@ -160,8 +177,11 @@ const AdminDashboard = () => {
     const sessionsByDate = {};
     
     filteredSessions.forEach(session => {
-      const date = format(parseISO(session.startTime), 'yyyy-MM-dd');
-      sessionsByDate[date] = (sessionsByDate[date] || 0) + 1;
+      // Añadir validación antes de parsear
+      if (session.startTime && isValid(parseISO(session.startTime))) {
+        const date = format(parseISO(session.startTime), 'yyyy-MM-dd');
+        sessionsByDate[date] = (sessionsByDate[date] || 0) + 1;
+      }
     });
     
     return sessionsByDate;
@@ -222,7 +242,46 @@ const AdminDashboard = () => {
     setSelectedUser(event.target.value);
   };
 
-  if (loading) {
+  // --- NUEVA FUNCION: Manejar promoción de usuario ---
+  const handlePromoteUser = async (userIdToPromote) => {
+    // userIdToPromote aquí es el googleId (que mapeamos a _id en el estado users)
+    if (!userIdToPromote) return;
+
+    // Confirmación (recomendado)
+    if (!window.confirm('¿Estás seguro de que quieres promover este usuario a administrador? Esta acción no se puede deshacer fácilmente.')) {
+      return;
+    }
+
+    setActionLoading(userIdToPromote); // Indicar carga para este usuario específico
+    setActionError(null);
+    setActionSuccess(null);
+
+    try {
+      // Llamar a la nueva API usando apiClient
+      const response = await apiClient.patch(`${ADMIN_API.USERS}/${userIdToPromote}/promote`);
+
+      if (response.data && response.data.success) {
+        // Actualizar el estado local 'users' para reflejar el cambio
+        setUsers(prevUsers =>
+          prevUsers.map(u =>
+            u._id === userIdToPromote ? { ...u, isAdmin: true } : u
+          )
+        );
+        setActionSuccess(`Usuario ${response.data.user?.name || ''} promovido exitosamente.`);
+        console.log('Usuario promovido:', response.data.user);
+      } else {
+        throw new Error(response.data?.message || 'No se pudo promover al usuario.');
+      }
+    } catch (err) {
+      console.error('Error al promover usuario:', err);
+      const message = err.response?.data?.message || err.message || 'Error desconocido al promover usuario.';
+      setActionError(`Error al promover (${userIdToPromote}): ${message}`);
+    } finally {
+      setActionLoading(null); // Terminar carga para este usuario
+    }
+  };
+
+  if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="text-center">
@@ -372,45 +431,80 @@ const AdminDashboard = () => {
         </div>
       </div>
       
-      {/* Tabla de usuarios */}
+      {/* Mostrar mensajes de éxito/error de acciones */}
+      {actionSuccess && (
+        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+          {actionSuccess}
+        </div>
+      )}
+      {actionError && (
+        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          {actionError}
+        </div>
+      )}
+
+      {/* Tabla de usuarios (Modificada) */}
       <div className="bg-white shadow rounded-lg p-4">
         <h2 className="text-xl font-semibold mb-4">Usuarios Registrados</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nombre
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Registro</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sesiones</th>
+                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rol
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fecha Registro
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sesiones
+                  Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.map(user => {
-                const userSessions = sessions.filter(session => session.userId === user._id);
+              {users.map(listedUser => { // Renombrar variable para evitar conflicto
+                const userSessions = sessions.filter(session => session.userId === listedUser._id);
+                // Determinar si el botón debe estar deshabilitado
+                // Comparar usando googleId (asumiendo que currentUser.id es googleId)
+                const isCurrentUser = currentUser?.id === listedUser._id; 
+                const isListedUserAdmin = listedUser.isAdmin === true;
+
                 return (
-                  <tr key={user._id}>
+                  <tr key={listedUser._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                      <div className="text-sm font-medium text-gray-900">{listedUser.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="text-sm text-gray-500">{listedUser.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
-                        {format(parseISO(user.createdAt), 'dd/MM/yyyy')}
+                        {/* Añadir validación por si createdAt no existe */}
+                        {listedUser.createdAt && isValid(parseISO(listedUser.createdAt)) ? format(parseISO(listedUser.createdAt), 'dd/MM/yyyy') : 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{userSessions.length}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ 
+                        isListedUserAdmin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {isListedUserAdmin ? 'Admin' : 'Usuario'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handlePromoteUser(listedUser._id)} // Pasar googleId
+                        disabled={isListedUserAdmin || isCurrentUser || actionLoading === listedUser._id} // Deshabilitar si ya es admin, es uno mismo, o está cargando
+                        className={`text-indigo-600 hover:text-indigo-900 disabled:text-gray-400 disabled:cursor-not-allowed ${ 
+                           actionLoading === listedUser._id ? 'animate-pulse' : ''
+                        }`}
+                      >
+                        {actionLoading === listedUser._id ? 'Promoviendo...' : (isListedUserAdmin ? '-' : 'Promover a Admin')}
+                      </button>
+                      {/* Aquí podrías añadir botones para "Degradar", "Eliminar", etc. en el futuro */}
                     </td>
                   </tr>
                 );

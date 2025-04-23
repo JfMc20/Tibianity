@@ -18,4 +18,15 @@ router.get('/users', isAuthenticated, isAdmin, adminController.getAllUsers);
  */
 router.get('/sessions', isAuthenticated, isAdmin, adminController.getAllSessions);
 
+/**
+ * @route PATCH /admin/users/:userId/promote
+ * @desc Promover un usuario a administrador
+ * @access Privado (Solo administradores)
+ */
+router.patch('/users/:userId/promote',
+  isAuthenticated,
+  isAdmin,
+  adminController.promoteUserToAdmin
+);
+
 export default router; 

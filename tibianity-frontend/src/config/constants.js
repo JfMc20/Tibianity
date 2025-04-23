@@ -18,19 +18,4 @@ export const AUTH_API = {
 export const ADMIN_API = {
   USERS: `${API_URL}/admin/users`,
   SESSIONS: `${API_URL}/admin/sessions`
-};
-
-// Lista de emails de administradores
-export const ADMIN_EMAILS = [
-  'admin@tibianity.com',
-  'fraan.mujica1@gmail.com'
-];
-
-// Email del administrador principal con acceso durante "Próximamente"
-export const ADMIN_EMAIL = 'fraan.mujica1@gmail.com';
-
-// Función auxiliar para verificar si un email es de administrador
-export const isAdminEmail = (email) => {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email);
 }; 
