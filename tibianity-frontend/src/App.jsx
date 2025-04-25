@@ -15,6 +15,7 @@ import LorePage from './pages/LorePage';
 import TeamPage from './pages/TeamPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ComingSoon from './components/ComingSoon/ComingSoon.jsx';
+import ChatPage from './pages/ChatPage';
 
 // Componente para verificar la conexión con el backend
 const ConnectionStatus = () => {
@@ -102,6 +103,9 @@ const AppContent = () => {
               
               {/* Ruta para el dashboard administrativo */}
               <Route path="/admin" element={<AdminDashboard />} />
+              
+              {/* Ruta para la página de Chat con LLM */}
+              <Route path="/chat" element={<ChatPage />} />
             </Routes>
           </main>
           <Footer />
