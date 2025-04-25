@@ -1,12 +1,10 @@
 import React from 'react';
-import { AUTH_API } from '../../config/constants'; // Ajusta la ruta si es necesario
+import { useAuth } from '../../context/AuthContext'; // Importar useAuth
 
-// Aceptar props isAuthenticated y error
-const ComingSoon = ({ isAuthenticated, error }) => {
-  const handleLogin = () => {
-    // Redirigir al endpoint de autenticación de Google en el backend
-    window.location.href = AUTH_API.LOGIN; // Usa /api/auth/google implicitamente
-  };
+// Quitar isAuthenticated y error de props, ya que los obtendremos del contexto
+const ComingSoon = () => {
+  // Obtener estado y funciones del contexto
+  const { isAuthenticated, error, login, logout } = useAuth(); 
 
   return (
     // Contenedor principal con fondo oscuro y posicionamiento relativo
@@ -50,7 +48,7 @@ const ComingSoon = ({ isAuthenticated, error }) => {
 
         {/* Botón de Login (solo si no está autenticado) */}
         {!isAuthenticated && (
-          <div className="relative group">
+          <div className="relative group mt-4"> {/* Añadir margen si es necesario */}
             <div 
               className="absolute -inset-1 rounded-lg blur opacity-50 group-hover:opacity-75 transition duration-300"
               style={{
@@ -58,12 +56,30 @@ const ComingSoon = ({ isAuthenticated, error }) => {
               }}
             />
             <button
-              onClick={handleLogin}
+              onClick={login} // Usar la función login del contexto
               className="relative font-medium text-sm py-2 px-6 rounded-md border border-[#2e2e3a] bg-[#111118]/80 hover:bg-[#111118] transition-all duration-300"
               aria-label="Login con Google"
             >
               <span className="text-white/90 group-hover:text-white transition-colors duration-300">
                 Iniciar sesión con Google
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Botón de Logout (solo si está autenticado pero restringido) */}
+        {isAuthenticated && (
+          <div className="relative group mt-4"> {/* Añadir margen */}
+             <div 
+              className="absolute -inset-1 rounded-lg blur opacity-50 group-hover:opacity-75 transition duration-300 bg-gradient-to-r from-red-500 to-orange-500" // Gradiente diferente para logout
+             />
+             <button
+              onClick={logout} // Usar la función logout del contexto
+              className="relative font-medium text-sm py-2 px-6 rounded-md border border-[#2e2e3a] bg-[#111118]/80 hover:bg-[#111118] transition-all duration-300"
+              aria-label="Cerrar Sesión"
+             >
+              <span className="text-white/90 group-hover:text-white transition-colors duration-300">
+                Cerrar Sesión
               </span>
             </button>
           </div>

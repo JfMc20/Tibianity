@@ -8,7 +8,7 @@ import Lore from './components/Lore';
 import Team from './components/Team';
 import Footer from './components/Footer';
 
-// Importar páginas
+// Import Pages
 import News from './pages/News';
 import Market from './pages/Market';
 import LorePage from './pages/LorePage';
@@ -17,12 +17,12 @@ import AdminDashboard from './pages/AdminDashboard';
 import ComingSoon from './components/ComingSoon/ComingSoon.jsx';
 import ChatPage from './pages/ChatPage';
 
-// Componente para verificar la conexión con el backend
+// Componnet to check backend status
 const ConnectionStatus = () => {
   const { backendStatus, checkBackendStatus, error } = useAuth();
   
   useEffect(() => {
-    // Verificar la conexión cada minuto
+    // Check connection every minute
     const interval = setInterval(() => {
       if (!backendStatus.online) {
         checkBackendStatus();
@@ -39,12 +39,12 @@ const ConnectionStatus = () => {
   return (
     <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-1 px-4 z-50">
       <p className="text-sm">
-        {error || 'No se pudo conectar al servidor. Verifica que el backend esté en ejecución.'}
+        {error || 'Could not connect to the server. Check if the backend is running.'}
         <button 
           onClick={checkBackendStatus}
           className="ml-2 underline"
         >
-          Reintentar
+          Try again
         </button>
       </p>
     </div>
@@ -57,13 +57,13 @@ const ConnectionStatus = () => {
 const AppContent = () => {
   const { user, isAuthenticated, loading, error } = useAuth();
   
-  // Determinar si es admin basándose en el campo isAdmin del objeto user del contexto
+  // Determine if it is admin based on the isAdmin field of the user object in the context
   const isAdmin = user?.isAdmin === true;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-        Cargando...
+        Loading...
       </div>
     );
   }
@@ -76,7 +76,7 @@ const AppContent = () => {
           <Navbar />
           <main className="flex-grow">
             <Routes>
-              {/* Ruta principal - Página de inicio */}
+              {/* First Route - Home Page */}
               <Route path="/" element={
                 <>
                   {/* Hero Section */}
@@ -87,24 +87,24 @@ const AppContent = () => {
                     <Services />
                   </div>
                   
-                  {/* Lore Section - Introducción al mundo */}
+                  {/* Lore Section - Introduction to the world */}
                   <Lore />
                   
-                  {/* Team Section - Equipo y patrocinadores */}
+                  {/* Team Section - Team and sponsors */}
                   <Team />
                 </>
               } />
               
-              {/* Rutas para cada sección */}
+              {/* Routes for each section */}
               <Route path="/news" element={<News />} />
               <Route path="/market" element={<Market />} />
               <Route path="/lore" element={<LorePage />} />
               <Route path="/team" element={<TeamPage />} />
               
-              {/* Ruta para el dashboard administrativo */}
+              {/* Route for the admin dashboard */}
               <Route path="/admin" element={<AdminDashboard />} />
               
-              {/* Ruta para la página de Chat con LLM */}
+              {/* Route for the Chat with LLM page */}
               <Route path="/chat" element={<ChatPage />} />
             </Routes>
           </main>

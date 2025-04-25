@@ -9,8 +9,6 @@ import { es } from 'date-fns/locale';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN_API } from '../config/constants';
-// Importar la API simulada (solo para desarrollo)
-import { mockAPI } from '../api/mockData.js';
 
 // Registrar componentes de Chart.js
 ChartJS.register(

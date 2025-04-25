@@ -73,6 +73,27 @@ Para crear una versión optimizada para producción:
 npm run build
 ```
 
+## 🛠️ Scripts de Desarrollo
+
+### Probar Conexión con Backend (`src/scripts/testBackend.mjs`)
+
+Este script te permite verificar rápidamente si el servidor backend está en ejecución y accesible desde tu entorno local sin necesidad de iniciar la aplicación frontend completa.
+
+**Funcionamiento:**
+- Lee la variable de entorno `REACT_APP_API_URL` (definida en un archivo `.env` en la raíz del frontend, por ejemplo) para obtener la URL del backend. Si no está definida, utiliza `http://localhost:5000` por defecto.
+- Envía una petición GET a la ruta raíz (`/`) del backend.
+- Espera una respuesta exitosa (código 2xx) dentro de un timeout de 5 segundos.
+- Muestra mensajes indicando si la conexión fue exitosa, si hubo un error HTTP, o si ocurrió un error de red (timeout, conexión rechazada, host no encontrado).
+
+**Uso:**
+Ejecuta el script desde la raíz del directorio `frontend` con Node.js:
+
+```bash
+node --experimental-json-modules src/scripts/testBackend.mjs
+```
+
+*(Nota: La flag `--experimental-json-modules` puede ser necesaria dependiendo de tu versión de Node.js)*
+
 ## 📁 Estructura del Proyecto
 
 ```
@@ -115,10 +136,11 @@ npm run build
 ## 🧩 Componentes Principales
 
 ### App.jsx
-- Componente raíz que configura React Router
-- Encapsula la aplicación en el AuthProvider para gestión de autenticación
-- Define todas las rutas principales de la aplicación
-- Mantiene Navbar y Footer como elementos persistentes
+- Componente raíz de la aplicación, renderizado por `index.js`.
+- Configura el enrutador principal (`BrowserRouter`) y define las rutas (`<Routes>`, `<Route>`) para todas las páginas de la aplicación utilizando `react-router-dom`.
+- Establece la estructura de diseño general, incluyendo componentes persistentes como `Navbar` y `Footer` que se muestran en todas las páginas.
+- Envuelve toda la aplicación dentro del `AuthProvider` (`AuthContext.jsx`), asegurando que el estado de autenticación y las funciones relacionadas estén disponibles globalmente para todos los componentes hijos.
+- Importa y utiliza los componentes de página (`News`, `Market`, etc.) para asociarlos a sus respectivas rutas.
 
 ### Navbar.jsx
 - Barra de navegación responsive con logo animado y efectos neón
@@ -201,6 +223,33 @@ La URL base del servidor backend se configura mediante una variable de entorno.
 
     export default apiClient;
     ```
+
+### Archivo Central de Constantes (`src/config/constants.js`)
+
+Este archivo centraliza las constantes de configuración usadas en la aplicación, principalmente las URLs de la API, para mejorar la mantenibilidad.
+
+- **`API_URL`:**
+    - Define la URL base para todas las llamadas al backend.
+    - Se configura prioritariamente mediante la variable de entorno `REACT_APP_API_URL` (establecida durante el build).
+    - Si la variable de entorno no está disponible, utiliza `'/api'` como fallback, útil para configuraciones con proxy inverso (Nginx) o el proxy de desarrollo.
+- **`AUTH_API`:**
+    - Objeto que agrupa las URLs completas para los endpoints de autenticación (Login, Logout, Perfil), construidas a partir de `API_URL`.
+- **`ADMIN_API`:**
+    - Objeto que agrupa las URLs completas para los endpoints de administración (Usuarios, Sesiones), construidas a partir de `API_URL`.
+
+### Módulo de Chat con N8N (`src/api/chat.js`)
+
+Este módulo maneja la comunicación con un servicio externo (probablemente un Large Language Model - LLM) a través de un webhook de N8N.
+
+- **Función Principal:** Exporta `sendMessageToLLM(message, sessionId)`.
+- **Lógica:**
+    - Envía el mensaje del usuario (`message`) a la URL del webhook de N8N mediante una petición POST.
+    - Formatea el payload esperado por N8N (con `chatInput`).
+    - Incluye lógica para manejar respuestas (verificación de status, parseo de JSON, validación de estructura básica como `success` y `answer`).
+    - Maneja errores de red y de la respuesta del servidor N8N.
+- **Configuración:**
+    - **URL del Webhook:** Utiliza una constante `N8N_WEBHOOK_URL`. Actualmente está **codificada directamente** en el archivo. La práctica recomendada (indicada con comentarios en el código) es configurarla mediante la variable de entorno `REACT_APP_N8N_WEBHOOK_URL` durante el build.
+    - **Session ID y Autenticación:** El código tiene comentarios indicando dónde se podría añadir un `sessionId` para mantener el contexto de la conversación y cabeceras de `Authorization` si el webhook las requiriera (tareas pendientes de implementar).
 
 ## 📰 Sistema de Noticias
 

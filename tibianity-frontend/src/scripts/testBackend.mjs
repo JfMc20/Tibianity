@@ -1,5 +1,5 @@
-// Script para probar la conexión con el backend desde la terminal
-// Este archivo debe ser ejecutado con node --experimental-json-modules src/scripts/testBackend.mjs
+// Script to test the connection with the backend from the terminal
+// This file must be executed with node --experimental-json-modules src/scripts/testBackend.mjs
 import { createRequire } from 'module';
 import { AbortController } from 'node-abort-controller';
 import fetch from 'node-fetch';
@@ -10,10 +10,10 @@ require('dotenv').config();
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 async function testBackendConnection() {
-  console.log(`\n🔍 Probando conexión con el backend: ${API_URL}\n`);
+  console.log(`\n🔍 Testing connection with the backend: ${API_URL}\n`);
   
   try {
-    // Configurar timeout de 5 segundos
+    // Configure timeout of 5 seconds
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
@@ -25,22 +25,22 @@ async function testBackendConnection() {
     
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Conexión exitosa!');
-      console.log(`📝 Mensaje del servidor: ${data.message || 'No hay mensaje'}`);
+      console.log('✅ Connection successful!');
+      console.log(`📝 Server message: ${data.message || 'No message'}`);
       return true;
     } else {
-      console.log(`❌ Error de conexión: ${response.status} ${response.statusText}`);
+      console.log(`❌ Connection error: ${response.status} ${response.statusText}`);
       return false;
     }
   } catch (error) {
-    let errorMessage = 'Error desconocido';
+    let errorMessage = 'Unknown error';
     
     if (error.name === 'AbortError') {
-      errorMessage = 'La conexión tardó demasiado tiempo (timeout de 5 segundos)';
+      errorMessage = 'The connection took too long (timeout of 5 seconds)';
     } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = 'Conexión rechazada. Verifica que el servidor esté ejecutándose.';
+      errorMessage = 'Connection refused. Check if the server is running.';
     } else if (error.code === 'ENOTFOUND') {
-      errorMessage = 'No se pudo encontrar el host. Verifica la URL del backend.';
+      errorMessage = 'Could not find the host. Check the backend URL.';
     } else {
       errorMessage = error.message;
     }
@@ -54,11 +54,11 @@ async function testBackendConnection() {
 testBackendConnection()
   .then(success => {
     if (success) {
-      console.log('\n✨ El backend está funcionando correctamente.\n');
+      console.log('\nBackend is running and connected.\n');
     } else {
-      console.log('\n⚠️ No se pudo conectar al backend. Verifica que esté en ejecución.\n');
+      console.log('\n⚠️ Could not connect to the backend. Check if it is running.\n');
     }
   })
   .catch(error => {
-    console.error('\n💥 Error inesperado:', error, '\n');
+    console.error('\nUnexpected error:', error, '\n');
   }); 

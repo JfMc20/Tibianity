@@ -3,7 +3,8 @@ import { AUTH_API } from '../config/constants';
 import { testBackendConnection } from '../utils/testConnection';
 
 // Crear el contexto de autenticación
-const AuthContext = createContext(null);
+const 
+AuthContext = createContext(null);
 
 // Hook personalizado para usar el contexto
 export const useAuth = () => useContext(AuthContext);
@@ -38,92 +39,86 @@ export const AuthProvider = ({ children }) => {
 
   // Función para verificar el estado de autenticación
   const checkAuthStatus = async () => {
+    setLoading(true);
+    setError(null);
+
+    // Verificar primero si el backend está disponible
+    if (!backendStatus.checked) {
+      const isOnline = await checkBackendStatus();
+      if (!isOnline) {
+        setLoading(false);
+        return;
+      }
+    } else if (!backendStatus.online) {
+      setLoading(false);
+      return;
+    }
+
+    // Usar fetch con AbortController para timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      // En desarrollo, podemos usar un mock para pruebas
-      if (process.env.NODE_ENV === 'development' && window.location.pathname.includes('/admin')) {
-        console.log('Modo desarrollo: autenticación simulada para administrador');
-        setUser({
-          id: 'dev-user',
-          name: 'Usuario Desarrollo',
-          email: 'admin@tibianity.com',
-          picture: 'https://via.placeholder.com/150',
-          isAdmin: true
-        });
-        setIsAuthenticated(true);
-        setLoading(false);
-        return;
-      }
-      
-      // Verificar primero si el backend está disponible
-      if (!backendStatus.checked) {
-        const isOnline = await checkBackendStatus();
-        if (!isOnline) {
-          setLoading(false);
-          return;
+      const response = await fetch(AUTH_API.PROFILE, {
+        method: 'GET',
+        credentials: 'include', // Importante para enviar cookies
+        signal: controller.signal // Asociar el AbortController
+      });
+
+      clearTimeout(timeoutId); // Limpiar el timeout si la respuesta llega a tiempo
+
+      if (!response.ok) {
+        // Manejar respuestas no exitosas (ej. 401, 500)
+        setUser(null);
+        setIsAuthenticated(false);
+        if (response.status !== 401) { // Solo mostrar error si no es un simple "No autenticado"
+          console.error(`[AuthContext] Error de autenticación: ${response.status} ${response.statusText}`);
+          setError(`Error de autenticación: ${response.status}`);
         }
-      } else if (!backendStatus.online) {
-        setLoading(false);
-        return;
+        // Si es 401, simplemente se queda no autenticado sin mostrar error explícito.
+        return; // Salir temprano si la respuesta no fue ok
       }
-      
-      // Usar XMLHttpRequest en vez de fetch para evitar problemas de CORS con credenciales
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', AUTH_API.PROFILE, true);
-      xhr.withCredentials = true; // Importante para enviar cookies
-      xhr.timeout = 10000; // 10 segundos de timeout
-      
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            setUser(data.user);
-            setIsAuthenticated(true);
-          } catch (e) {
-            console.error('[AuthContext] Error al parsear respuesta:', e);
-            setError('Error al procesar la respuesta del servidor');
-            setUser(null);
-            setIsAuthenticated(false);
-          }
+
+      // Intentar parsear la respuesta JSON
+      try {
+        const data = await response.json();
+        if (data && data.user) {
+          setUser(data.user);
+          setIsAuthenticated(true);
         } else {
-          setUser(null);
-          setIsAuthenticated(false);
-          if (xhr.status === 401) {
-            // Silencioso en producción, el estado refleja no autenticado.
-          } else {
-            console.error(`[AuthContext] Error de autenticación no esperado: ${xhr.status} ${xhr.statusText}`);
-            setError(`Error de autenticación: ${xhr.status} ${xhr.statusText}`);
-          }
+          // La respuesta fue ok, pero no tiene el formato esperado
+           console.error('[AuthContext] Respuesta OK pero formato inesperado:', data);
+           setError('Respuesta inesperada del servidor.');
+           setUser(null);
+           setIsAuthenticated(false);
         }
-        setLoading(false);
-      };
-      
-      xhr.onerror = function() {
-        console.error('Error verificando autenticación: No se pudo conectar al servidor');
+      } catch (parseError) {
+        // Error al parsear JSON
+        console.error('[AuthContext] Error al parsear respuesta JSON:', parseError);
+        setError('Error al procesar la respuesta del servidor.');
         setUser(null);
         setIsAuthenticated(false);
-        setError('No se pudo conectar al servidor. Verifica que el backend esté en ejecución.');
-        setBackendStatus({ checked: true, online: false });
-        setLoading(false);
-      };
-      
-      xhr.ontimeout = function() {
-        console.error('Error verificando autenticación: Timeout');
-        setUser(null);
-        setIsAuthenticated(false);
-        setError('El servidor tardó demasiado en responder. Verifica la conexión.');
-        setBackendStatus({ checked: true, online: false });
-        setLoading(false);
-      };
-      
-      xhr.send();
+      }
+
     } catch (error) {
-      console.error('Error verificando autenticación:', error);
+      // Manejar errores de red, timeout, etc.
       setUser(null);
       setIsAuthenticated(false);
-      setError(`Error: ${error.message}`);
+      if (error.name === 'AbortError') {
+        console.error('[AuthContext] Error verificando autenticación: Timeout');
+        setError('El servidor tardó demasiado en responder.');
+        setBackendStatus({ checked: true, online: false }); // Marcar como offline si hay timeout
+      } else if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+         console.error('[AuthContext] Error verificando autenticación: Error de red', error);
+         setError('No se pudo conectar al servidor.');
+         setBackendStatus({ checked: true, online: false }); // Marcar como offline si hay error de red
+      } 
+      else {
+        console.error('[AuthContext] Error inesperado verificando autenticación:', error);
+        setError(`Error inesperado: ${error.message}`);
+      }
+    } finally {
+      // Asegurarse de que el estado de carga se desactive siempre
       setLoading(false);
     }
   };

@@ -1,11 +1,11 @@
 /**
- * Archivo de configuración centralizada
- * Contiene constantes y configuraciones usadas en toda la aplicación
+ * Centralized configuration file
+ * Contains constants and configurations used throughout the application
  */
 
-// Define la URL base para las llamadas a la API.
-// Usa una variable de entorno si está disponible durante el build,
-// o usa una ruta relativa /api que será manejada por el proxy de Nginx.
+// Defines the base URL for API calls.
+// Uses an environment variable if available during build,
+// or uses a relative path /api which will be handled by the Nginx proxy.
 export const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 // URLs de API específicas
