@@ -1,0 +1,85 @@
+# docker-compose.dev.yml
+# Configuración para desarrollo local con recarga automática
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./tibianity-backend
+      dockerfile: Dockerfile
+      # Podemos optimizar el build para desarrollo si es necesario, pero por ahora usamos el mismo
+    ports:
+      - "5000:5000" # Puerto del backend expuesto al host
+    environment:
+      # Apunta a la base de datos en el contenedor mongo
+      MONGO_URI: mongodb://mongo:27017/tibianityDb 
+      # Apunta al frontend corriendo localmente con npm start
+      FRONTEND_URL: http://localhost:3000 
+      # Credenciales Google OAuth (igual que en producción)
+      GOOGLE_CLIENT_ID: 630703062932-5e1tb4i9teqngvsafsh9u0m2mcdjblpd.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: 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
+      SESSION_SECRET: tibianity_session_secret_key # Mantener consistente
+      # Entorno Node para desarrollo
+      NODE_ENV: development
+      # Añadimos la URL del backend dentro de la red Docker
+      BACKEND_URL: http://backend:5000
+    volumes:
+      # Monta el código fuente local en el contenedor
+      - ./tibianity-backend:/app
+      # Evita que node_modules local sobreescriba el del contenedor (usa el instalado en la imagen)
+      - /app/node_modules 
+    container_name: tibianity_backend_dev # Nombre diferente para evitar conflictos
+    # Usa nodemon para recarga automática
+    command: npm run watch 
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    networks:
+      - tibianity-net
+
+  frontend:
+    build:
+      context: ./tibianity-frontend
+      dockerfile: Dockerfile
+      # Usamos el mismo Dockerfile, pero apuntamos a la etapa 'builder'
+      target: builder
+    ports:
+      # Expone el puerto del servidor de desarrollo React
+      - "3000:3000" 
+    environment:
+      # Apunta al backend expuesto en el HOST (localhost)
+      REACT_APP_API_URL: http://localhost:5000 
+      # Necesario en algunos entornos Docker (Windows/MacOS) para que funcione el hot-reload
+      CHOKIDAR_USEPOLLING: "true"
+      NODE_ENV: development
+    volumes:
+      # Monta el código fuente local en el contenedor
+      - ./tibianity-frontend:/app
+      # Evita que node_modules local sobreescriba el del contenedor
+      - /app/node_modules
+    container_name: tibianity_frontend_dev # Nombre diferente
+    # Anula el CMD del Dockerfile (nginx) y ejecuta el servidor de desarrollo
+    command: npm start 
+    restart: unless-stopped
+    depends_on:
+      - backend # Depende del backend para llamadas API
+    networks:
+      - tibianity-net
+
+  mongo:
+    image: mongo:6
+    container_name: tibianity_mongo_dev # Nombre diferente
+    restart: unless-stopped
+    volumes:
+      - mongo-data-dev:/data/db # Volumen separado para desarrollo
+    networks:
+      - tibianity-net
+    # No es necesario exponer el puerto de mongo al host normalmente
+
+networks:
+  tibianity-net:
+    driver: bridge
+
+volumes:
+  mongo-data-dev: # Volumen separado para no mezclar con datos de producción 

@@ -59,19 +59,46 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 
 ## 🚀 Uso
 
-Para iniciar la aplicación en modo desarrollo:
+### Modo Desarrollo (Recomendado con Docker)
 
-```bash
-npm start
-```
+Para la experiencia de desarrollo más fluida, especialmente trabajando con el backend, se recomienda usar el archivo `docker-compose.dev.yml` ubicado en la raíz del proyecto (`Tibianity/`). Este archivo está configurado para:
 
-La aplicación se abrirá automáticamente en tu navegador en [http://localhost:3000](http://localhost:3000).
+- Ejecutar el frontend con el servidor de desarrollo de React (`npm start`).
+- Montar tu código fuente local directamente en el contenedor, permitiendo **hot-reloading** (recarga en caliente) instantánea al guardar cambios.
+- Ejecutar el backend con `nodemon` para recarga automática.
+- Configurar automáticamente las variables de entorno para la comunicación entre frontend y backend.
+
+1.  **Desde la raíz del proyecto (`Tibianity/`):**
+    ```bash
+    # Construye las imágenes si es la primera vez o cambias dependencias
+    docker-compose -f docker-compose.dev.yml build 
+
+    # Inicia los servicios (frontend, backend, db)
+    docker-compose -f docker-compose.dev.yml up
+    ```
+2.  Accede al frontend en tu navegador: [http://localhost:3000](http://localhost:3000)
+3.  ¡Realiza cambios en el código frontend y observa la actualización automática!
+
+### Modo Desarrollo (Solo Frontend Local)
+
+Si prefieres ejecutar solo el servidor de desarrollo del frontend localmente (sin Docker para el frontend):
+
+1.  Asegúrate de que el backend y la base de datos estén ejecutándose (puedes usar `docker-compose up backend mongo` desde la raíz del proyecto).
+2.  Asegúrate de tener un archivo `.env` en la raíz de `tibianity-frontend/` con `REACT_APP_API_URL=http://localhost:5000` (o el puerto correcto del backend).
+3.  Desde la carpeta `tibianity-frontend/`:
+    ```bash
+    npm start
+    ```
+    La aplicación se abrirá automáticamente en tu navegador en [http://localhost:3000](http://localhost:3000).
+
+### Producción
 
 Para crear una versión optimizada para producción:
 
 ```bash
 npm run build
 ```
+Esta versión se sirve mediante Nginx cuando ejecutas `docker-compose up` (usando `docker-compose.yml`).
 
 ## 🛠️ Scripts de Desarrollo
 
@@ -166,6 +193,19 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 - Fallback a API del backend si el archivo local no está disponible
 - Visualización de noticias con categorías, fechas y contenido formateado
 - Funcionalidad de expansión/colapso para noticias largas
+
+### Footer.jsx
+- Pie de página global que se muestra en todas las páginas
+- Enlaces a redes sociales y otros recursos
+
+### ComingSoon.jsx
+- Página/Componente de marcador de posición mostrado mientras la aplicación principal está en desarrollo o para usuarios no autenticados.
+- Integra `AuthContext` para mostrar diferentes mensajes y opciones (Login/Logout) dependiendo del estado de autenticación.
+- Incluye el logo de Tibianity y enlaces a redes sociales.
+- Muestra un formulario de suscripción por correo (actualmente sin funcionalidad de envío).
+- Utiliza `@tsparticles/react` para un fondo animado de partículas personalizable.
+- Presenta una ilustración decorativa y maneja la visualización de errores de autenticación.
+- Diseño responsive adaptado a diferentes tamaños de pantalla con efectos visuales neón.
 
 ## 📄 Sistema de Páginas
 

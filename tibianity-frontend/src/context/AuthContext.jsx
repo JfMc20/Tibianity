@@ -2,11 +2,10 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { AUTH_API } from '../config/constants';
 import { testBackendConnection } from '../utils/testConnection';
 
-// Crear el contexto de autenticación
-const 
-AuthContext = createContext(null);
+// Create the authentication context
+const AuthContext = createContext(null);
 
-// Hook personalizado para usar el contexto
+// Custom hook to use the context
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -16,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [backendStatus, setBackendStatus] = useState({ checked: false, online: false });
 
-  // Función para verificar si el backend está disponible
+  // Function to check if the backend is available
   const checkBackendStatus = async () => {
     try {
       const result = await testBackendConnection();
@@ -26,23 +25,23 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (!result.success) {
-        setError(result.message);
+        setError(result.message); // Keep the message from testConnection (already translated)
       }
       
       return result.success;
     } catch (error) {
       setBackendStatus({ checked: true, online: false });
-      setError('Error al verificar conexión con el backend');
+      setError('Error checking backend connection');
       return false;
     }
   };
 
-  // Función para verificar el estado de autenticación
+  // Function to check authentication status
   const checkAuthStatus = async () => {
     setLoading(true);
     setError(null);
 
-    // Verificar primero si el backend está disponible
+    // First, check if the backend is available
     if (!backendStatus.checked) {
       const isOnline = await checkBackendStatus();
       if (!isOnline) {
@@ -54,76 +53,76 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Usar fetch con AbortController para timeout
+    // Use fetch with AbortController for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
 
     try {
       const response = await fetch(AUTH_API.PROFILE, {
         method: 'GET',
-        credentials: 'include', // Importante para enviar cookies
-        signal: controller.signal // Asociar el AbortController
+        credentials: 'include', // Important for sending cookies
+        signal: controller.signal // Associate the AbortController
       });
 
-      clearTimeout(timeoutId); // Limpiar el timeout si la respuesta llega a tiempo
+      clearTimeout(timeoutId); // Clear the timeout if the response arrives in time
 
       if (!response.ok) {
-        // Manejar respuestas no exitosas (ej. 401, 500)
+        // Handle non-successful responses (e.g., 401, 500)
         setUser(null);
         setIsAuthenticated(false);
-        if (response.status !== 401) { // Solo mostrar error si no es un simple "No autenticado"
-          console.error(`[AuthContext] Error de autenticación: ${response.status} ${response.statusText}`);
-          setError(`Error de autenticación: ${response.status}`);
+        if (response.status !== 401) { // Only show error if it's not a simple "Not authenticated"
+          console.error(`[AuthContext] Authentication error: ${response.status} ${response.statusText}`);
+          setError(`Authentication error: ${response.status}`);
         }
-        // Si es 401, simplemente se queda no autenticado sin mostrar error explícito.
-        return; // Salir temprano si la respuesta no fue ok
+        // If it's 401, simply remain unauthenticated without showing an explicit error.
+        return; // Exit early if the response was not ok
       }
 
-      // Intentar parsear la respuesta JSON
+      // Try to parse the JSON response
       try {
         const data = await response.json();
         if (data && data.user) {
           setUser(data.user);
           setIsAuthenticated(true);
         } else {
-          // La respuesta fue ok, pero no tiene el formato esperado
-           console.error('[AuthContext] Respuesta OK pero formato inesperado:', data);
-           setError('Respuesta inesperada del servidor.');
+          // The response was ok, but doesn't have the expected format
+           console.error('[AuthContext] OK response but unexpected format:', data);
+           setError('Unexpected response from the server.');
            setUser(null);
            setIsAuthenticated(false);
         }
       } catch (parseError) {
-        // Error al parsear JSON
-        console.error('[AuthContext] Error al parsear respuesta JSON:', parseError);
-        setError('Error al procesar la respuesta del servidor.');
+        // Error parsing JSON
+        console.error('[AuthContext] Error parsing JSON response:', parseError);
+        setError('Error processing server response.');
         setUser(null);
         setIsAuthenticated(false);
       }
 
     } catch (error) {
-      // Manejar errores de red, timeout, etc.
+      // Handle network errors, timeout, etc.
       setUser(null);
       setIsAuthenticated(false);
       if (error.name === 'AbortError') {
-        console.error('[AuthContext] Error verificando autenticación: Timeout');
-        setError('El servidor tardó demasiado en responder.');
-        setBackendStatus({ checked: true, online: false }); // Marcar como offline si hay timeout
+        console.error('[AuthContext] Error checking authentication: Timeout');
+        setError('The server took too long to respond.');
+        setBackendStatus({ checked: true, online: false }); // Mark as offline if there's a timeout
       } else if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-         console.error('[AuthContext] Error verificando autenticación: Error de red', error);
-         setError('No se pudo conectar al servidor.');
-         setBackendStatus({ checked: true, online: false }); // Marcar como offline si hay error de red
+         console.error('[AuthContext] Error checking authentication: Network error', error);
+         setError('Could not connect to the server.');
+         setBackendStatus({ checked: true, online: false }); // Mark as offline if there's a network error
       } 
       else {
-        console.error('[AuthContext] Error inesperado verificando autenticación:', error);
-        setError(`Error inesperado: ${error.message}`);
+        console.error('[AuthContext] Unexpected error checking authentication:', error);
+        setError(`Unexpected error: ${error.message}`);
       }
     } finally {
-      // Asegurarse de que el estado de carga se desactive siempre
+      // Ensure the loading state is always turned off
       setLoading(false);
     }
   };
 
-  // Función para iniciar sesión
+  // Function to initiate login
   const login = async () => {
     const isOnline = await checkBackendStatus();
     if (!isOnline) {
@@ -132,18 +131,18 @@ export const AuthProvider = ({ children }) => {
     window.location.href = AUTH_API.LOGIN;
   };
 
-  // Función para cerrar sesión
+  // Function to handle logout
   const logout = async () => {
     try {
       const isOnline = await checkBackendStatus();
       if (!isOnline) {
-        // Si el backend no está disponible, cerramos sesión localmente
+        // If the backend is unavailable, log out locally
         setUser(null);
         setIsAuthenticated(false);
         return;
       }
       
-      // Usar XMLHttpRequest para cerrar sesión
+      // Use XMLHttpRequest for logout (consider fetch if compatible)
       const xhr = new XMLHttpRequest();
       xhr.open('GET', AUTH_API.LOGOUT, true);
       xhr.withCredentials = true;
@@ -154,28 +153,29 @@ export const AuthProvider = ({ children }) => {
       };
       
       xhr.onerror = function() {
-        console.error('Error al cerrar sesión');
-        setError('Error al cerrar sesión');
+        console.error('Error logging out');
+        setError('Error logging out');
       };
       
       xhr.send();
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      setError('Error al cerrar sesión');
+      console.error('Error during logout:', error);
+      setError('Error during logout');
     }
   };
 
-  // Verificar el estado de autenticación al cargar la aplicación
+  // Check authentication status when the application loads
   useEffect(() => {
-    // Primero verificar si el backend está disponible
+    // First check if the backend is available
     checkBackendStatus().then(isOnline => {
       if (isOnline) {
         checkAuthStatus();
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps 
   }, []);
 
-  // Valor que se proporcionará a través del contexto
+  // Value provided through the context
   const value = {
     user,
     isAuthenticated,

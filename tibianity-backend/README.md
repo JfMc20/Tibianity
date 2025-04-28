@@ -156,26 +156,49 @@ cp .env.example .env
 
 ## Ejecución
 
-Para iniciar el servidor en modo desarrollo:
+### Modo Desarrollo (Recomendado con Docker)
+
+La forma más sencilla de ejecutar el backend junto con el frontend y la base de datos en un entorno de desarrollo con recarga automática para ambos es usando el archivo `docker-compose.dev.yml` desde la **raíz del proyecto** (`Tibianity/`, un nivel arriba de esta carpeta).
+
+1.  **Desde la raíz del proyecto (`../` si estás en `tibianity-backend/`):**
+    ```bash
+    # Construye las imágenes (solo necesario la primera vez o si cambias dependencias)
+    docker-compose -f docker-compose.dev.yml build
+
+    # Inicia todos los servicios (backend con nodemon, frontend con hot-reload, db)
+    docker-compose -f docker-compose.dev.yml up
+    ```
+2.  El backend estará disponible en [http://localhost:5000](http://localhost:5000).
+3.  Los cambios en el código fuente del backend (`src/`) provocarán un reinicio automático del servidor gracias a `nodemon` (`npm run watch`).
+
+### Modo Desarrollo (Standalone)
+
+Si deseas ejecutar solo el backend localmente (necesitarás una instancia de MongoDB accesible y configurar `MONGO_URI` en `.env`):
+
+Para iniciar el servidor en modo desarrollo (ejecuta directamente TypeScript):
 
 ```bash
 npm run dev
 ```
 
-Para desarrollo con recarga automática:
+Para desarrollo con recarga automática usando `nodemon`:
 
 ```bash
 npm run watch
 ```
 
-Para compilar y ejecutar en producción:
+### Producción (Standalone)
+
+Para compilar y ejecutar en producción (requiere MongoDB accesible):
 
 ```bash
 npm run build
 npm start
 ```
 
-Para sincronizar y traducir noticias:
+### Scripts Adicionales
+
+Para sincronizar y traducir noticias (requiere configurar API keys en `.env`):
 
 ```bash
 npm run sync-news

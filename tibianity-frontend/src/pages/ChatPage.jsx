@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import MessageList from '../components/Chat/MessageList';
 import ChatInput from '../components/Chat/ChatInput';
 import { sendMessageToLLM } from '../api/chat';

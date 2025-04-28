@@ -1,38 +1,38 @@
 import { API_URL } from '../config/constants';
 
 /**
- * Función para verificar la conexión con el backend
+ * Function to check the connection with the backend
  * @returns {Promise<{success: boolean, message: string}>}
  */
 export const testBackendConnection = async () => {
   try {
     // Intentar hacer una petición simple al backend
     const response = await fetch(`${API_URL}/`, {
-      signal: AbortSignal.timeout(5000) // 5 segundos de timeout
+      signal: AbortSignal.timeout(5000) // 5 seconds timeout
     });
     
     if (response.ok) {
       const data = await response.json();
       return {
         success: true,
-        message: data.message || 'Conexión exitosa con el backend'
+        message: data.message || 'Successful connection with the backend'
       };
     } else {
       return {
         success: false,
-        message: `Error de conexión: ${response.status} ${response.statusText}`
+        message: `Connection error: ${response.status} ${response.statusText}`
       };
     }
   } catch (error) {
-    console.error('Error al probar conexión con backend:', error);
+    console.error('Error testing backend connection:', error);
     
-    // Obtener un mensaje más descriptivo según el error
-    let errorMessage = 'Error desconocido';
+    // Get a more descriptive message based on the error
+    let errorMessage = 'Unknown error';
     
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-      errorMessage = 'No se pudo conectar al servidor. Verifica que el backend esté en ejecución.';
+      errorMessage = 'Could not connect to the server. Verify that the backend is running.';
     } else if (error.name === 'AbortError') {
-      errorMessage = 'La conexión tardó demasiado tiempo. Verifica la red o si el servidor está sobrecargado.';
+      errorMessage = 'The connection timed out. Check the network or if the server is overloaded.';
     } else {
       errorMessage = `Error: ${error.message}`;
     }
