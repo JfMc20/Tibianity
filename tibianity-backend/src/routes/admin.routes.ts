@@ -40,4 +40,15 @@ router.patch('/users/:userId/demote',
   adminController.demoteAdminToUser
 );
 
+/**
+ * @route POST /admin/send-newsletter
+ * @desc Envía un correo a todos los suscriptores
+ * @access Privado (Solo administradores)
+ */
+router.post('/send-newsletter',
+  isAuthenticated,
+  isAdmin,
+  adminController.sendNewsletter
+);
+
 export default router; 

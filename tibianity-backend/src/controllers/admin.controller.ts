@@ -1,8 +1,15 @@
 import { Request, Response } from 'express';
 import User, { IUser } from '../models/User';
 import SessionLog from '../models/SessionLog';
+import Subscriber from '../models/Subscriber'; // Importar el modelo Subscriber
 import mongoose, { Document } from 'mongoose';
 import { UserProfile } from '../types/auth.types'; // Asegurarse que esté importado
+import { Resend } from 'resend'; // Importar Resend
+
+// Instanciar Resend fuera de la clase para reutilizar la instancia
+// Asegúrate de que RESEND_API_KEY está en tus variables de entorno
+const resend = new Resend(process.env.RESEND_API_KEY);
+const fromEmail = process.env.RESEND_FROM_EMAIL; // Obtener el email remitente
 
 /**
  * Clase de controlador para funciones administrativas
@@ -201,14 +208,71 @@ class AdminController {
         photo: updatedUser.photo
       };
 
-      console.log(`✅ Usuario degradado a normal: ${updatedUser.name}`);
-      res.status(200).json({ success: true, message: 'Usuario degradado a rol normal.', user: mappedUser });
+      console.log(`✅ Usuario degradado: ${updatedUser.name}`);
+      res.status(200).json({ success: true, message: 'Usuario degradado exitosamente.', user: mappedUser });
 
     } catch (error) {
       console.error('Error al degradar usuario:', error);
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Error interno del servidor al degradar usuario.'
+      });
+    }
+  }
+
+  /**
+   * Envía un correo a todos los suscriptores usando Resend
+   * @param {Request} req - Objeto de solicitud Express (espera subject y body en el cuerpo)
+   * @param {Response} res - Objeto de respuesta Express
+   * @returns {Promise<void>}
+   */
+  async sendNewsletter(req: Request, res: Response): Promise<void> {
+    const { subject, body } = req.body;
+
+    if (!subject || !body) {
+      res.status(400).json({ success: false, message: 'El asunto y el cuerpo del correo son obligatorios.' });
+      return;
+    }
+
+    if (!process.env.RESEND_API_KEY || !fromEmail) {
+       console.error('Error: RESEND_API_KEY o RESEND_FROM_EMAIL no están configuradas en las variables de entorno.');
+       res.status(500).json({ success: false, message: 'Error de configuración del servidor para envío de correos.' });
+       return;
+    }
+
+    try {
+      const subscribers = await Subscriber.find().select('email -_id'); 
+      const emails = subscribers.map(sub => sub.email);
+
+      if (emails.length === 0) {
+        res.status(404).json({ success: false, message: 'No hay suscriptores registrados para enviar correos.' });
+        return;
+      }
+
+      console.log(`INFO: Iniciando envío de newsletter con asunto "${subject}" a ${emails.length} suscriptores desde ${fromEmail}.`);
+
+      const { data, error } = await resend.emails.send({
+        from: fromEmail,      
+        to: fromEmail,        
+        bcc: emails,          
+        subject: subject,     
+        html: body,           
+      });
+
+      if (error) {
+        console.error('Error al enviar correos con Resend:', error);
+        res.status(502).json({ success: false, message: `Error del servicio de envío: ${error.message}` });
+        return;
+      }
+
+      console.log(`✅ Newsletter enviado exitosamente a ${emails.length} suscriptores. ID de envío: ${data?.id}`);
+      res.status(200).json({ success: true, message: `Correo enviado exitosamente a ${emails.length} suscriptores.` });
+
+    } catch (error) {
+      console.error('Error general al procesar el envío de newsletter:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error interno del servidor al procesar el envío.'
       });
     }
   }

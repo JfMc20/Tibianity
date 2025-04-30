@@ -16,6 +16,7 @@ import TeamPage from './pages/TeamPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ComingSoon from './components/ComingSoon/ComingSoon.jsx';
 import ChatPage from './pages/ChatPage';
+import EmailSenderPage from './pages/EmailSenderPage';
 
 // Componnet to check backend status
 const ConnectionStatus = () => {
@@ -103,6 +104,7 @@ const AppContent = () => {
               
               {/* Route for the admin dashboard */}
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/email" element={<EmailSenderPage />} />
               
               {/* Route for the Chat with LLM page */}
               <Route path="/chat" element={<ChatPage />} />

@@ -1,0 +1,15 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Estructura del Backend (Node.js/TypeScript)
+
+El backend sigue una estructura modular similar a MVC:
+
+- **Punto de Entrada:** [src/index.ts](mdc:tibianity-backend/src/index.ts) configura Express, middlewares, Passport, conexión DB, y monta las rutas.
+- **Rutas:** Definidas en [src/routes/](mdc:tibianity-backend/src/routes/). Cada archivo agrupa rutas relacionadas (ej. [auth.routes.ts](mdc:tibianity-backend/src/routes/auth.routes.ts), [admin.routes.ts](mdc:tibianity-backend/src/routes/admin.routes.ts), [subscribe.routes.ts](mdc:tibianity-backend/src/routes/subscribe.routes.ts)). Las rutas usan middlewares de autenticación ([src/middleware/auth.middleware.ts](mdc:tibianity-backend/src/middleware/auth.middleware.ts)).
+- **Controladores:** Lógica de manejo de solicitudes en [src/controllers/](mdc:tibianity-backend/src/controllers/). Cada controlador ([admin.controller.ts](mdc:tibianity-backend/src/controllers/admin.controller.ts), [subscribe.controller.ts](mdc:tibianity-backend/src/controllers/subscribe.controller.ts), etc.) contiene las funciones usadas por las rutas.
+- **Modelos:** Esquemas de Mongoose para MongoDB en [src/models/](mdc:tibianity-backend/src/models/). Incluyen [User.ts](mdc:tibianity-backend/src/models/User.ts), [SessionLog.ts](mdc:tibianity-backend/src/models/SessionLog.ts), y [Subscriber.ts](mdc:tibianity-backend/src/models/Subscriber.ts).
+- **Configuración:** Conexión DB en [src/config/db.ts](mdc:tibianity-backend/src/config/db.ts) y configuración de Passport en [src/config/passport.config.ts](mdc:tibianity-backend/src/config/passport.config.ts).
+- **Servicios:** Lógica de negocio o interacción con APIs externas (ej. Resend en [admin.controller.ts](mdc:tibianity-backend/src/controllers/admin.controller.ts)).

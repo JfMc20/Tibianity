@@ -2,10 +2,12 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import passport from './config/passport.config';
 import newsRoutes from './routes/news.routes';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
+import subscribeRoutes from './routes/subscribe.routes';
 import { connectDB } from './config/db';
 
 // Cargar variables de entorno
@@ -19,11 +21,16 @@ const app: Application = express();
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const MONGO_URI = process.env.MONGO_URI;
 
-// Verificar que SESSION_SECRET esté definido
+// Verificar que SESSION_SECRET y MONGO_URI estén definidos
 if (!SESSION_SECRET) {
   console.error('Error: La variable de entorno SESSION_SECRET es requerida pero no está definida.');
   process.exit(1); // Detener la aplicación si no hay secreto
+}
+if (!MONGO_URI) {
+  console.error('Error: La variable de entorno MONGO_URI es requerida pero no está definida.');
+  process.exit(1);
 }
 
 // Configuración CORS mejorada
@@ -51,6 +58,11 @@ app.use(
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: MONGO_URI,
+      collectionName: 'sessions',
+      ttl: 24 * 60 * 60,
+    }),
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000, // 24 horas
@@ -82,6 +94,7 @@ app.use((req, res, next) => {
 app.use('/api/news', newsRoutes);
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api/subscribe', subscribeRoutes);
 
 // Ruta de prueba
 app.get('/', (_req, res) => {

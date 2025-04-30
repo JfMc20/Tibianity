@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Tibianity: Visión General y Stack Tecnológico
+
+Este proyecto es una aplicación web completa para la comunidad Tibianity, compuesta por un frontend React y un backend Node.js/TypeScript, orquestados con Docker.
+
+- **Frontend ([tibianity-frontend/README.md](mdc:tibianity-frontend/README.md)):** Construido con React, React Router para enrutamiento, Tailwind CSS para estilos, y Axios para peticiones HTTP. Incluye autenticación de usuario y un panel de administración.
+- **Backend ([tibianity-backend/README.md](mdc:tibianity-backend/README.md)):** API RESTful con Node.js, Express, y TypeScript. Usa Mongoose para interactuar con MongoDB. Maneja autenticación (Google OAuth via Passport), datos de usuarios, suscripciones, y envío de correos (Resend).
+- **Orquestación:** Docker Compose ([docker-compose.yml](mdc:docker-compose.yml) para producción, [docker-compose.dev.yml](mdc:docker-compose.dev.yml) para desarrollo) gestiona los servicios (frontend, backend, mongo, Traefik).
+- **Base de Datos:** MongoDB.
+
+El objetivo principal es proveer una plataforma para la comunidad, incluyendo noticias, información del juego, y herramientas administrativas.

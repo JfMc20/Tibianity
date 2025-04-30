@@ -124,10 +124,19 @@ export const AuthProvider = ({ children }) => {
 
   // Function to initiate login
   const login = async () => {
+    setLoading(true); // Start loading indication
+    setError(null);   // Clear previous errors
+
     const isOnline = await checkBackendStatus();
+    
     if (!isOnline) {
-      return;
+       // checkBackendStatus already sets the error message
+       setLoading(false); // Stop loading
+       return; // Do nothing if backend is offline
     }
+    
+    // If backend was online, proceed with redirection
+    // The page will navigate away, so no need to setLoading(false) here
     window.location.href = AUTH_API.LOGIN;
   };
 

@@ -1,0 +1,21 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Configuración y Entorno
+
+La configuración de la aplicación se maneja principalmente a través de variables de entorno y archivos de configuración específicos.
+
+- **Docker Compose:**
+  - [docker-compose.yml](mdc:docker-compose.yml): Define los servicios, redes, volúmenes y variables de entorno para el entorno principal (producción). Las variables sensibles (Google Keys, Resend Keys) están **directamente incrustadas** aquí.
+  - [docker-compose.dev.yml](mdc:docker-compose.dev.yml): Configuración para desarrollo local. Usa volúmenes para montar el código fuente y habilita la recarga automática. Lee variables sensibles (como `RESEND_API_KEY`) desde un archivo `.env` esperado en la raíz del proyecto (`${VARIABLE_NAME}`).
+- **Variables de Entorno del Backend:**
+  - El backend ([src/index.ts](mdc:tibianity-backend/src/index.ts)) carga variables usando `dotenv`. Estas son inyectadas por Docker Compose.
+  - Variables clave: `MONGO_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FRONTEND_URL`.
+- **Variables de Entorno del Frontend:**
+  - Se configuran durante el build de React (usando `REACT_APP_` prefix).
+  - [src/config/constants.js](mdc:tibianity-frontend/src/config/constants.js) centraliza las URLs de la API, leyendo `process.env.REACT_APP_API_URL`.
+  - La variable `REACT_APP_API_URL` se define en la sección `environment` del servicio `frontend` en los archivos Docker Compose.
+- **Archivo `.env` (Raíz del Proyecto):**
+  - Se **espera** un archivo `.env` en la raíz (`/root/tibianity/`) para que `docker-compose.dev.yml` funcione correctamente al leer variables como `${RESEND_API_KEY}`. El `docker-compose.yml` de producción **no** depende de este archivo `.env` actualmente.

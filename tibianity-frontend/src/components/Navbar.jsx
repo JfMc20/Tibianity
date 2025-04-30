@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
  */
 const Logo = () => {
   const [isHovered, setIsHovered] = useState(false);
-  
+
   const handleMouseEnter = () => {
     setIsHovered(true);
   };
@@ -26,63 +26,36 @@ const Logo = () => {
   };
 
   return (
-    <Link 
+    <Link
       to="/"
-      className="relative block w-full h-full overflow-visible"
+      className="relative flex items-center h-full overflow-hidden group"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      aria-label="Tibianity Home"
     >
-      {/* Contenedor principal para el logo */}
-      <div className="relative transition-transform duration-300 flex items-center justify-center w-full h-full overflow-visible" 
+      {/* REMOVED Logo Image */}
+      {/* 
+      <img
+        src="/images/Logo Escudo (1).webp" // --- CHANGED IMAGE SOURCE ---
+        alt="Tibianity Logo"
+        className="relative z-10 transition-all duration-300 ease-out"
         style={{
-          transform: isHovered ? 'scale(1.03)' : 'scale(1)'
-        }}>
-        {/* Efecto de brillo suave con degradado - reducido */}
-        <div className="absolute inset-0 scale-105 opacity-25" style={{
-          background: 'radial-gradient(circle, rgba(96, 200, 255, 0.15) 0%, rgba(189, 79, 255, 0.1) 50%, transparent 90%)',
-          filter: 'blur(4px)',
-          zIndex: 0
-        }} />
-        
-        {/* Sombras de color múltiples para el logo - más sutiles */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <img 
-            src="/images/Logo (1).png" 
-            alt="" 
-            style={{
-              filter: `
-                drop-shadow(0 0 1px rgba(96, 200, 255, 0.3))
-                drop-shadow(0 0 2px rgba(189, 79, 255, 0.2))
-                brightness(1.1)
-              `,
-              width: '120px',
-              height: 'auto',
-              objectFit: 'contain',
-              transform: 'scale(1.2)'
-            }}
-          />
-        </div>
-        
-        {/* Logo original con brillo moderado */}
-        <img 
-          src="/images/Logo (1).png" 
-          alt="Tibianity Logo" 
-          className="relative z-20"
-          style={{
-            filter: `brightness(${isHovered ? 1.5 : 1.3})`,
-            transition: 'filter 0.3s ease',
-            width: '120px',
-            height: 'auto',
-            objectFit: 'contain',
-            transform: 'scale(1.2)'
-          }}
-        />
-        
-        {/* Texto de respaldo en caso de que la imagen no cargue */}
-        <span className="absolute top-0 left-0 opacity-0 font-bold text-lg text-white">
-          Tibianity
-        </span>
-      </div>
+          height: '56px', // --- INCREASED HEIGHT AGAIN ---
+          width: 'auto',
+          filter: `brightness(${isHovered ? 1.2 : 1}) drop-shadow(0 1px 2px rgba(0,0,0,0.3))`,
+          transform: `scale(${isHovered ? 1.05 : 1})` 
+        }}
+      />
+      */}
+      {/* Text "Tibianity" - Always visible, now the main logo element */}
+      <span
+        className="text-2xl font-bold text-white whitespace-nowrap transition-colors duration-300 group-hover:text-sky-300" // Adjusted size, weight, removed margin, added hover effect
+        style={{
+          filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))'
+        }}
+      >
+        Tibianity
+      </span>
     </Link>
   );
 };

@@ -1,0 +1,24 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Flujo de Suscripción y Envío de Correos
+
+El sistema gestiona la suscripción y el envío de correos de la siguiente manera:
+
+1.  **Suscripción (Público):**
+    - El usuario ingresa su email en el formulario del componente [ComingSoon.jsx](mdc:tibianity-frontend/src/components/ComingSoon/ComingSoon.jsx).
+    - Al enviar, el frontend llama a `POST /api/subscribe` en el backend.
+    - La ruta es manejada por [subscribe.routes.ts](mdc:tibianity-backend/src/routes/subscribe.routes.ts) y el controlador [subscribe.controller.ts](mdc:tibianity-backend/src/controllers/subscribe.controller.ts).
+    - El controlador valida el email y lo guarda en la base de datos usando el modelo [Subscriber.ts](mdc:tibianity-backend/src/models/Subscriber.ts).
+    - Se devuelve feedback al usuario en el frontend.
+
+2.  **Envío de Correos (Admin):**
+    - Un administrador navega a la página [EmailSenderPage.jsx](mdc:tibianity-frontend/src/pages/EmailSenderPage.jsx) (ruta `/admin/email`).
+    - Rellena el asunto y cuerpo del correo en el componente [EmailSubscribers.jsx](mdc:tibianity-frontend/src/components/Admin/EmailSubscribers.jsx).
+    - Al enviar, el frontend llama a `POST /api/admin/send-newsletter` en el backend.
+    - La ruta es manejada por [admin.routes.ts](mdc:tibianity-backend/src/routes/admin.routes.ts) y la función `sendNewsletter` en [admin.controller.ts](mdc:tibianity-backend/src/controllers/admin.controller.ts).
+    - El controlador verifica que el usuario sea admin, obtiene todos los emails de la colección `subscribers`.
+    - Usa el SDK de **Resend** (configurado con `RESEND_API_KEY` y `RESEND_FROM_EMAIL` de las variables de entorno) para enviar el correo en `BCC` a todos los suscriptores.
+    - Devuelve feedback al administrador en el frontend.

@@ -25,14 +25,14 @@ services:
       NODE_ENV: production
       # ACTUALIZAMOS BACKEND_URL para reflejar el acceso vía Traefik/API path
       BACKEND_URL: https://tibianity.es/api
+      # Variables de Resend (ACTUALIZADAS)
+      RESEND_API_KEY: re_9x3peV2U_77T49tFuntFUcDUYH3xD5dVK # Nueva API Key
+      RESEND_FROM_EMAIL: noreply@tibianity.es # Usar email del dominio verificado
       # Asegúrate de incluir aquí OTRAS variables de entorno necesarias del .env
       # Ejemplo: GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       # (O déjalas en .env y usa 'env_file' pero SIN MONGO_URI ni FRONTEND_URL)
       # CONSIDERACIÓN: Es mejor copiar las otras variables de .env aquí
       #              o usar un .env sin MONGO_URI con env_file.
-    volumes:
-      # - ./tibianity-backend:/app # Comentamos o eliminamos esta línea para usar el código de la imagen
-      - /app/node_modules # Evita que node_modules local sobreescriba el del contenedor
     container_name: tibianity_backend
     restart: unless-stopped
     depends_on:

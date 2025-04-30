@@ -8,6 +8,7 @@
 // or uses a relative path /api which will be handled by the Nginx proxy.
 export const API_URL = process.env.REACT_APP_API_URL || '/api';
 
+
 // URLs de API específicas
 export const AUTH_API = {
   LOGIN: `${API_URL}/auth/google`,

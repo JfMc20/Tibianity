@@ -1,22 +1,22 @@
 # Backend de Tibianity
 
-Backend para la aplicación Tibianity que proporciona API para integrarse con TibiaData y ofrece autenticación mediante Google OAuth.
+Backend para la aplicación Tibianity que proporciona API para integrarse con TibiaData, ofrece autenticación mediante Google OAuth y gestiona suscripciones de correo.
 
 ## Descripción General
-El backend de Tibianity es una API REST desarrollada en Node.js con TypeScript. Proporciona servicios para obtener datos del juego Tibia utilizando la API TibiaData y ofrece autenticación mediante Google OAuth. Además, almacena la información de los usuarios en MongoDB.
+El backend de Tibianity es una API REST desarrollada en Node.js con TypeScript. Proporciona servicios para obtener datos del juego Tibia utilizando la API TibiaData, ofrece autenticación mediante Google OAuth, almacena información de usuarios y suscripciones de correo en MongoDB, y permite el envío de correos a suscriptores a través de Resend.
 
 ## Estructura del Proyecto
 
 ```
 backend/
 ├── src/
-│   ├── config/         # Configuraciones del sistema
-│   ├── controllers/    # Controladores para las rutas 
+│   ├── config/         # Configuraciones del sistema (db, passport)
+│   ├── controllers/    # Controladores para las rutas (auth, news, admin, subscribe)
 │   ├── middleware/     # Middlewares (autenticación, etc.)
-│   ├── models/         # Modelos de datos (Mongoose)
-│   ├── routes/         # Definición de rutas de la API
+│   ├── models/         # Modelos de datos (Mongoose: User, SessionLog, Subscriber)
+│   ├── routes/         # Definición de rutas de la API (auth, news, admin, subscribe)
 │   ├── scripts/        # Scripts utilitarios
-│   ├── services/       # Servicios para conexión con APIs
+│   ├── services/       # Servicios para conexión con APIs externas (TibiaData, Resend)
 │   ├── types/          # Definiciones de tipos TypeScript
 │   ├── utils/          # Utilidades varias
 │   └── index.ts        # Punto de entrada de la aplicación
@@ -58,6 +58,10 @@ backend/
   - Establece relación con el modelo de Usuario mediante referencias
   - Permite el seguimiento y auditoría de la actividad de usuarios
 
+- **Subscriber.ts**: Modelo para almacenar suscripciones de correo
+  - Almacena la dirección de correo electrónico y la fecha de suscripción.
+  - Asegura que los correos sean únicos y válidos.
+
 ### 4. Middleware de Autenticación
 - **auth.middleware.ts**: Funciones de verificación para proteger rutas
   - `isAuthenticated`: Verifica que el usuario esté autenticado
@@ -76,8 +80,14 @@ backend/
   - `/api/news/:id`: Obtiene una noticia específica por ID
 
 - **admin.routes.ts**: Rutas administrativas protegidas
-  - `/admin/users`: Obtiene todos los usuarios registrados (solo admin)
-  - `/admin/sessions`: Obtiene todos los logs de inicio de sesión (solo admin)
+  - `/admin/users`: Obtiene todos los usuarios registrados.
+  - `/admin/sessions`: Obtiene todos los logs de inicio de sesión.
+  - `/admin/users/:userId/promote`: Promueve un usuario a admin.
+  - `/admin/users/:userId/demote`: Degrada un admin a usuario.
+  - `/admin/send-newsletter`: Envía un correo a todos los suscriptores.
+
+- **subscribe.routes.ts**: Ruta pública para nuevas suscripciones
+  - `POST /api/subscribe`: Registra un nuevo correo electrónico de suscriptor.
 
 ### 6. Controladores
 - **news.controller.ts**: Gestiona las solicitudes de noticias
@@ -89,15 +99,19 @@ backend/
   - Integración con Passport
 
 - **admin.controller.ts**: Gestiona las funciones administrativas
-  - Obtención de listado de usuarios registrados
-  - Obtención y filtrado de registros de sesiones
-  - Funcionalidades protegidas para administradores
+  - Obtención de listado de usuarios y sesiones.
+  - Gestión de roles (promover/degradar).
+  - Lógica para iniciar el envío de correos a suscriptores (usa Resend).
+
+- **subscribe.controller.ts**: Gestiona el registro de nuevos suscriptores.
+  - Validación y almacenamiento de correos en la base de datos.
 
 ### 7. Servicios
 - **tibiadata.service.ts**: Servicio para interactuar con la API de TibiaData
   - Métodos para obtener noticias recientes y por ID
   - Adaptación de datos entre formatos de API y aplicación
   - Manejo de errores y logging detallado
+- **Resend Integration**: La lógica para enviar correos usando el SDK de Resend se encuentra directamente en `admin.controller.ts` (método `sendNewsletter`).
 
 ### 8. Script de Sincronización de Noticias (sync-news.ts)
 - Script para obtener y traducir noticias de Tibia
@@ -117,6 +131,8 @@ backend/
 - `OPENROUTER_BASE_URL`: URL base para OpenRouter API
 - `TRANSLATION_MODEL`: Modelo a utilizar para traducciones
 - `MONGO_URI`: URI de conexión a MongoDB Atlas
+- `RESEND_API_KEY`: Clave API para el servicio de envío de correos Resend.
+- `RESEND_FROM_EMAIL`: Dirección de correo (verificada en Resend) usada como remitente.
 
 ## Tipos de Datos Principales
 - `TibiaNews`: Interfaz para las noticias de Tibia
@@ -124,6 +140,7 @@ backend/
 - `UserProfile`: Interfaz para perfiles de usuario
 - `IUser`: Interfaz para el modelo de usuario en MongoDB
 - `ISessionLog`: Interfaz para registros de sesiones en MongoDB
+- `ISubscriber`: Interfaz para el modelo de suscriptor en MongoDB.
 
 ## Instalación
 
@@ -209,8 +226,9 @@ Por defecto el servidor se ejecutará en http://localhost:5000.
 ## Endpoints API
 
 ### Públicos
-- `GET /api/news` - Obtiene las últimas noticias
-- `GET /api/news/:id` - Obtiene una noticia específica por ID
+- `GET /api/news` - Obtiene las últimas noticias.
+- `GET /api/news/:id` - Obtiene una noticia específica por ID.
+- `POST /api/subscribe` - Registra un nuevo suscriptor.
 
 ### Autenticación
 - `GET /auth/google` - Inicia el flujo de autenticación con Google
@@ -218,12 +236,11 @@ Por defecto el servidor se ejecutará en http://localhost:5000.
 - `GET /auth/logout` - Cierra la sesión del usuario
 
 ### Administración (protegidos)
-- `GET /admin/users` - Obtiene todos los usuarios registrados (requiere ser administrador)
-- `GET /admin/sessions` - Obtiene todos los logs de sesiones (requiere ser administrador)
-  - Filtros opcionales:
-    - `?userId={googleId}` - Filtra sesiones por usuario
-    - `?startDate={YYYY-MM-DD}` - Filtra desde una fecha específica
-    - `?endDate={YYYY-MM-DD}` - Filtra hasta una fecha específica
+- `GET /admin/users` - Obtiene todos los usuarios registrados.
+- `GET /admin/sessions` - Obtiene todos los logs de sesiones.
+- `PATCH /admin/users/:userId/promote` - Promueve un usuario a admin.
+- `PATCH /admin/users/:userId/demote` - Degrada un admin a usuario.
+- `POST /admin/send-newsletter` - Inicia el envío de un correo a todos los suscriptores.
 
 ## Sistema de Registro de Sesiones
 
@@ -255,4 +272,5 @@ La verificación de administrador está implementada en el middleware `isAdmin` 
 - MongoDB Atlas
 - Axios
 - Passport (Google OAuth)
-- OpenRouter API (para traducciones) 
+- OpenRouter API (para traducciones)
+- Resend (para envío de correos) 

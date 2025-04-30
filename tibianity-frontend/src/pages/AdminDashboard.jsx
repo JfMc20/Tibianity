@@ -9,6 +9,7 @@ import { es } from 'date-fns/locale';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ADMIN_API } from '../config/constants';
+import SidePanelMenu from '../components/Admin/SidePanelMenu';
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -342,12 +343,16 @@ const AdminDashboard = () => {
   }
 
   return (
-    // Contenedor principal con fondo oscuro y texto claro por defecto
-    <div className="p-4 mx-auto max-w-7xl text-gray-200 bg-[#060919] min-h-screen">
-      <h1 className="text-3xl font-bold text-white mb-6">Dashboard Administrativo</h1>
-      
-      {/* Tarjetas de resumen - Estilo oscuro */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    // Contenedor principal con flex para side panel y contenido
+    <div className="flex h-screen bg-[#060919] text-gray-200">
+      <SidePanelMenu />
+
+      {/* Contenedor del contenido principal con padding izquierdo y SUPERIOR */}
+      <main className="flex-1 overflow-y-auto p-6 pl-72 pt-16"> {/* Añadido pt-16 */}
+        <h1 className="text-3xl font-bold text-white mb-6">Dashboard Principal</h1>
+        
+        {/* Tarjetas de resumen */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 border-l-4 border-blue-500">
           <h2 className="text-sm text-gray-400 uppercase">Total Usuarios</h2>
           <p className="text-3xl font-bold text-white">{metrics.totalUsers}</p>
@@ -368,9 +373,9 @@ const AdminDashboard = () => {
           <p className="text-3xl font-bold text-white">{metrics.totalSessions}</p>
         </div>
       </div>
-      
-      {/* Filtros - Estilo oscuro */}
-      <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 mb-6">
+        
+        {/* Filtros */}
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4 mb-6">
         <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="flex flex-col">
@@ -424,9 +429,9 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-      
-      {/* Gráficos - Contenedor oscuro */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4">
           <h2 className="text-xl font-semibold mb-4 text-white">Sesiones por Fecha</h2>
           <div className="h-64">
@@ -497,9 +502,9 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-      
-      {/* Mostrar mensajes de éxito/error de acciones - Estilo oscuro */}
-      {actionSuccess && (
+        
+        {/* Mensajes de éxito/error de acciones */}
+        {actionSuccess && (
         <div className="mb-4 bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded relative" role="alert">
           {actionSuccess}
         </div>
@@ -510,8 +515,8 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Tabla de usuarios - Contenedor oscuro */}
-      <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4">
+        {/* Tabla de usuarios */}
+        <div className="bg-[#111118] border border-[#2e2e3a] rounded-lg p-4">
         <h2 className="text-xl font-semibold mb-4 text-white">Usuarios Registrados</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-[#2e2e3a]">
@@ -589,6 +594,7 @@ const AdminDashboard = () => {
           </table>
         </div>
       </div>
+      </main>
     </div>
   );
 };

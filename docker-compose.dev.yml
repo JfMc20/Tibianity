@@ -24,6 +24,9 @@ services:
       NODE_ENV: development
       # Añadimos la URL del backend dentro de la red Docker
       BACKEND_URL: http://backend:5000
+      # Variables para Resend (leídas desde el .env)
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL}
     volumes:
       # Monta el código fuente local en el contenedor
       - ./tibianity-backend:/app
@@ -48,8 +51,8 @@ services:
       # Expone el puerto del servidor de desarrollo React
       - "3000:3000" 
     environment:
-      # Apunta al backend expuesto en el HOST (localhost)
-      REACT_APP_API_URL: http://localhost:5000 
+      # Apunta al backend expuesto en el HOST usando la IP pública
+      REACT_APP_API_URL: http://149.130.186.216:5000 
       # Necesario en algunos entornos Docker (Windows/MacOS) para que funcione el hot-reload
       CHOKIDAR_USEPOLLING: "true"
       NODE_ENV: development

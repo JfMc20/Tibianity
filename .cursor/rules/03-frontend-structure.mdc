@@ -1,0 +1,17 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Estructura del Frontend (React)
+
+El frontend está construido con React y sigue una organización basada en componentes y páginas:
+
+- **Punto de Entrada:** [src/index.js](mdc:tibianity-frontend/src/index.js) renderiza el componente principal `App`.
+- **Componente Principal:** [src/App.jsx](mdc:tibianity-frontend/src/App.jsx) configura el Router (`react-router-dom`), el `AuthProvider`, y la estructura general (Navbar, Footer). Define las rutas principales y las rutas administrativas protegidas.
+- **Páginas:** Ubicadas en [src/pages/](mdc:tibianity-frontend/src/pages/). Representan las vistas principales de la aplicación (ej. [News.jsx](mdc:tibianity-frontend/src/pages/News.jsx), [AdminDashboard.jsx](mdc:tibianity-frontend/src/pages/AdminDashboard.jsx), [EmailSenderPage.jsx](mdc:tibianity-frontend/src/pages/EmailSenderPage.jsx)).
+- **Componentes:** Componentes reutilizables en [src/components/](mdc:tibianity-frontend/src/components/). Incluye componentes generales (Navbar, Footer) y específicos como los del Admin ([src/components/Admin/](mdc:tibianity-frontend/src/components/Admin/)) y ComingSoon ([src/components/ComingSoon/ComingSoon.jsx](mdc:tibianity-frontend/src/components/ComingSoon/ComingSoon.jsx)).
+- **Contexto:** Estado global y lógica compartida, principalmente para autenticación en [src/context/AuthContext.jsx](mdc:tibianity-frontend/src/context/AuthContext.jsx).
+- **Configuración:** Constantes y URLs de API en [src/config/constants.js](mdc:tibianity-frontend/src/config/constants.js).
+- **Estilos:** Principalmente con Tailwind CSS ([tailwind.config.js](mdc:tibianity-frontend/tailwind.config.js)).
+- **Iconos:** Usa `@heroicons/react`.

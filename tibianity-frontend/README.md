@@ -2,7 +2,7 @@
 
 ![Tibianity Logo](public/images/Logo%20(1).png)
 
-Tibianity es una plataforma web para una comunidad de creadores de contenido enfocados en el juego Tibia. El sitio sirve como un hub central para mostrar streamers, youtubers y otros creadores patrocinados, así como para compartir noticias, lore del juego, eventos próximos y ofrecer un mercado virtual.
+Tibianity es una plataforma web para una comunidad de creadores de contenido enfocados en el juego Tibia. El sitio sirve como un hub central para mostrar streamers, youtubers y otros creadores patrocinados, así como para compartir noticias, lore del juego, eventos próximos, ofrecer un mercado virtual y gestionar suscripciones de correo.
 
 ## 📋 Tabla de Contenidos
 
@@ -12,8 +12,9 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 - [Uso](#uso)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Componentes Principales](#componentes-principales)
-- [Sistema de Páginas](#sistema-de-páginas)
+- [Sistema de Páginas y Rutas Administrativas](#sistema-de-páginas-y-rutas-administrativas)
 - [Autenticación](#autenticación)
+- [Funcionalidades del Administrador](#funcionalidades-del-administrador)
 - [Integración con Backend](#integración-con-backend)
 - [Sistema de Noticias](#sistema-de-noticias)
 - [Estilos y Diseño](#estilos-y-diseño)
@@ -29,6 +30,11 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 - **Componentes Interactivos**: Elementos UI con efectos hover, animaciones y gradientes
 - **Diseño Responsive**: Optimizado para todos los dispositivos
 - **Integración con Backend**: Conexión con el backend para obtener datos de noticias y gestionar la autenticación
+- **Suscripción por Correo Electrónico**: Página ComingSoon
+- **Panel de Administración**:
+  - Visualización de usuarios y sesiones
+  - Gestión de roles de administrador
+  - Envío de correos masivos a suscriptores
 
 ## 🛠️ Tecnologías
 
@@ -40,6 +46,11 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 - **Fuentes**: Inter (Google Fonts)
 - **Metadatos**: Open Graph para compartir en redes sociales
 - **Procesamiento CSS**: PostCSS con autoprefixer
+- **Iconos**: Heroicons (`@heroicons/react`)
+- **Visualización de Datos (Admin)**: Chart.js (`react-chartjs-2`)
+- **Selección de Fechas (Admin)**: React Datepicker (`react-datepicker`)
+- **Manejo de Fechas**: Date-fns
+- **Partículas Animadas**: tsparticles (`@tsparticles/react`)
 
 ## 🔧 Instalación
 
@@ -132,6 +143,11 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │
   ├── /src                  # Código fuente de la aplicación
   │   ├── /components       # Componentes reutilizables
+  │   │   ├── /Admin        # Componentes específicos del panel admin
+  │   │   │   ├── SidePanelMenu.jsx
+  │   │   │   └── EmailSubscribers.jsx
+  │   │   ├── /ComingSoon   # Componentes de la página ComingSoon
+  │   │   │   └── ComingSoon.jsx 
   │   │   ├── Navbar.jsx    # Barra de navegación principal
   │   │   ├── Hero.jsx      # Sección principal de la página de inicio
   │   │   ├── Services.jsx  # Sección de servicios
@@ -142,14 +158,19 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │   ├── /context          # Contextos de React (estado global)
   │   │   └── AuthContext.jsx # Contexto para la autenticación
   │   │
-  │   ├── /pages            # Páginas principales
+  │   ├── /pages            # Páginas principales y vistas
+  │   │   ├── AdminDashboard.jsx
+  │   │   ├── EmailSenderPage.jsx # Nueva página para enviar correos
   │   │   ├── News.jsx      # Página de noticias
   │   │   ├── Market.jsx    # Página del mercado virtual
   │   │   ├── LorePage.jsx  # Página de lore
-  │   │   └── TeamPage.jsx  # Página de equipo
+  │   │   ├── TeamPage.jsx  # Página de equipo
+  │   │   └── ... (otras páginas)
   │   │
   │   ├── /styles           # Estilos CSS adicionales
-  │   │
+  │   ├── /config           # Archivos de configuración (constants.js)
+  │   ├── /api              # Lógica de llamadas a API (chat.js)
+  │   ├── /utils            # Funciones de utilidad
   │   ├── App.jsx           # Componente principal y rutas
   │   ├── index.js          # Punto de entrada de la aplicación
   │   └── index.css         # Estilos globales
@@ -164,8 +185,10 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 
 ### App.jsx
 - Componente raíz de la aplicación, renderizado por `index.js`.
-- Configura el enrutador principal (`BrowserRouter`) y define las rutas (`<Routes>`, `<Route>`) para todas las páginas de la aplicación utilizando `react-router-dom`.
+- Configura el enrutador principal (`BrowserRouter`) y define las rutas (`<Routes>`, `<Route>`) para todas las páginas, incluyendo las rutas administrativas (`/admin`, `/admin/email`).
 - Establece la estructura de diseño general, incluyendo componentes persistentes como `Navbar` y `Footer` que se muestran en todas las páginas.
+- **Renderiza condicionalmente** la interfaz principal (con `Navbar`) o el componente `ComingSoon` basado en el estado de autenticación del usuario.
+- **Protege las rutas administrativas** asegurando que solo se rendericen si el usuario autenticado es administrador (`isAdmin`).
 - Envuelve toda la aplicación dentro del `AuthProvider` (`AuthContext.jsx`), asegurando que el estado de autenticación y las funciones relacionadas estén disponibles globalmente para todos los componentes hijos.
 - Importa y utiliza los componentes de página (`News`, `Market`, etc.) para asociarlos a sus respectivas rutas.
 
@@ -206,14 +229,23 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 - Utiliza `@tsparticles/react` para un fondo animado de partículas personalizable.
 - Presenta una ilustración decorativa y maneja la visualización de errores de autenticación.
 - Diseño responsive adaptado a diferentes tamaños de pantalla con efectos visuales neón.
+- **Formulario de Suscripción**: Incluye un formulario para que los usuarios ingresen su correo electrónico. Llama al endpoint `/api/subscribe` del backend para registrar la suscripción.
+- Muestra feedback al usuario sobre el éxito o error de la suscripción.
 
-## 📄 Sistema de Páginas
+### Admin Components (`src/components/Admin/`)
+- **SidePanelMenu.jsx**: Menú lateral fijo para la navegación dentro del panel de administración. Usa `NavLink` y `@heroicons/react`.
+- **EmailSubscribers.jsx**: Componente de formulario que permite a los administradores escribir un asunto y cuerpo (HTML) para un correo y enviarlo a todos los suscriptores registrados a través del endpoint `/api/admin/send-newsletter` del backend.
+
+## 📄 Sistema de Páginas y Rutas Administrativas
 
 - **Página de Inicio (/)**: Combina Hero, Services, Lore y Team
 - **News (/news)**: Página de noticias con integración de backend/archivo local
 - **Market (/market)**: Página para el mercado virtual
 - **Lore (/lore)**: Página completa dedicada a la historia y lore
 - **Team (/team)**: Página del equipo de creadores
+- **Chat (/chat)**: Página de chat con LLM
+- **Admin Dashboard (`/admin`)**: Página principal del panel de administración. Muestra métricas clave, filtros y tablas de usuarios/sesiones. Incluye el `SidePanelMenu`.
+- **Enviar Correos (`/admin/email`)**: Página dedicada al envío de correos masivos. Contiene el `SidePanelMenu` y el componente `EmailSubscribers`.
 
 ## 🔑 Autenticación
 
@@ -225,11 +257,22 @@ El sistema de autenticación utiliza Google OAuth a través del backend:
 - Manejo de estado de autenticación (isAuthenticated, user)
 - Componentes UI que responden al estado de autenticación
 
+## 👑 Funcionalidades del Administrador
+
+El panel de administración (`/admin` y sub-rutas) ofrece funcionalidades exclusivas para usuarios marcados como administradores:
+- **Dashboard Principal (`/admin`)**: Visualización de métricas (total usuarios, sesiones), filtros por fecha y usuario, gráficos de sesiones y tabla de usuarios registrados.
+- **Gestión de Roles**: Posibilidad de promover usuarios a administradores o degradar administradores existentes (excepto a sí mismo).
+- **Envío de Correos (`/admin/email`)**: Interfaz para redactar y enviar correos masivos a todos los usuarios suscritos a través del formulario en `ComingSoon`. La funcionalidad de envío real depende de la configuración del backend con Resend.
+
 ## 🔌 Integración con Backend
 
 El frontend se comunica con el backend para:
 
 - Autenticación con Google OAuth
+- **Registrar suscripciones** de correo (`POST /api/subscribe`)
+- **Obtener datos administrativos** (usuarios, sesiones) (`GET /admin/users`, `GET /admin/sessions`)
+- **Gestionar roles** de administrador (`PATCH /admin/users/:id/promote`, `PATCH /admin/users/:id/demote`)
+- **Iniciar el envío de correos** a suscriptores (`POST /api/admin/send-newsletter`)
 - Obtención de noticias oficiales cuando no están disponibles localmente
 - Otras funcionalidades de API que puedan ser necesarias
 
@@ -318,17 +361,19 @@ Este módulo maneja la comunicación con un servicio externo (probablemente un L
 ## 🚧 Estado y Próximos Pasos
 
 ### Estado Actual
-- Sistema de rutas implementado
+- Sistema de rutas implementado (incluyendo rutas admin)
 - Diseño visual y componentes principales creados
-- Integración con backend para autenticación
-- Sistema de noticias funcional
+- Integración con backend para autenticación y noticias
+- Funcionalidad de suscripción por correo implementada
+- Panel de administración básico con visualización de datos y gestión de roles
+- Funcionalidad de envío de correos a suscriptores implementada (vía Resend en backend)
 
 ### Próximos Desarrollos
 - Implementación completa del mercado virtual
 - Perfiles para creadores individuales
 - Sistema de eventos y calendario
 - Sección de lore con contenido completo
-- Panel de administración
+- Mejoras adicionales al panel de administración (ej. estadísticas más detalladas, paginación, búsqueda en tablas)
 
 ## 👥 Contribución
 
