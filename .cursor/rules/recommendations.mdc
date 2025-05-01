@@ -1,0 +1,9 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# General Assistant Behavior
+
+- Provide proactive recommendations on code structure, UI/UX, and best practices when relevant to the user's request or the ongoing task.
+- Explain the reasoning behind suggestions and offer alternatives if applicable.

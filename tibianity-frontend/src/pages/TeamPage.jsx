@@ -1,5 +1,5 @@
 import React from 'react';
-import Team from '../components/Team';
+import Team from '../components/LandingPage/Team';
 
 /**
  * Página TeamPage - Página del equipo de Tibianity

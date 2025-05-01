@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import LoginGoogleButton from './common/LoginGoogleButton';
 
 /**
  * @typedef {Object} NavLinkProps
@@ -13,8 +15,9 @@ import { useAuth } from '../context/AuthContext';
 
 /**
  * Logo Component - Brand logo with subtle neon effect
+ * Exported for use in other components like Footer.
  */
-const Logo = () => {
+export const Logo = () => {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = () => {
@@ -49,7 +52,8 @@ const Logo = () => {
       */}
       {/* Text "Tibianity" - Always visible, now the main logo element */}
       <span
-        className="text-2xl font-bold text-white whitespace-nowrap transition-colors duration-300 group-hover:text-sky-300" // Adjusted size, weight, removed margin, added hover effect
+        className="text-xl font-bold text-white whitespace-nowrap transition-colors duration-300 
+                   group-hover:bg-gradient-to-r group-hover:from-[#60c8ff] group-hover:to-[#bd4fff] group-hover:bg-clip-text group-hover:text-transparent"
         style={{
           filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))'
         }}
@@ -64,36 +68,19 @@ const Logo = () => {
  * LoginButton Component - Clean login button with Google OAuth
  */
 const LoginButton = () => {
-  const [isHovered, setIsHovered] = useState(false);
   const { user, isAuthenticated, login, logout, error } = useAuth();
   
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
-  
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-  };
-  
-  // Comprobar si el usuario es administrador usando solo user.isAdmin del contexto
   const isAdmin = user?.isAdmin === true;
   
   return (
     <div className="relative group">
-      <div 
-        className={`absolute -inset-[1px] rounded-md transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-        style={{
-          background: 'linear-gradient(to right, #60c8ff, #bd4fff)',
-          borderRadius: '6px',
-        }}
-      />
       {error && (
         <div className="absolute -bottom-8 right-0 bg-red-600 text-white text-xs px-2 py-1 rounded">
           {error}
         </div>
       )}
       {isAuthenticated ? (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 relative border border-transparent p-1 rounded-md">
           {user?.photos && user.photos.length > 0 && (
             <img 
               src={user.photos[0].value} 
@@ -101,43 +88,30 @@ const LoginButton = () => {
               className="w-8 h-8 rounded-full border border-[#2e2e3a]"
             />
           )}
-          <div className="flex flex-col">
+          <div className="hidden sm:flex sm:flex-col">
             <span className="text-xs text-white/70">Bienvenido</span>
-            <span className="text-sm text-white">{user?.displayName}</span>
+            <span className="text-sm text-white truncate max-w-[100px]">{user?.displayName}</span>
           </div>
           {isAdmin && (
-            <Link 
+            <RouterNavLink 
               to="/admin"
-              className="font-medium text-sm py-1.5 px-4 rounded-md border border-[#2e2e3a] bg-[#111118]/40 hover:bg-[#111118]/80 transition-all duration-300 relative ml-2"
+              className="font-medium text-sm py-1.5 px-3 rounded-md border border-[#2e2e3a] bg-[#111118]/60 hover:bg-[#111118]/90 transition-all duration-300 relative text-white/90 hover:text-white whitespace-nowrap"
               aria-label="Admin Dashboard"
             >
-              <span className="text-white/90 hover:text-white transition-colors duration-300">Admin</span>
-            </Link>
+              Admin
+            </RouterNavLink>
           )}
           <button 
-            className="font-medium text-sm py-1.5 px-4 rounded-md border border-[#2e2e3a] bg-[#111118]/40 hover:bg-[#111118]/80 transition-all duration-300 relative ml-2"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            className="font-medium text-sm py-1.5 px-3 rounded-md border border-[#2e2e3a] bg-[#111118]/60 hover:bg-[#111118]/90 transition-all duration-300 relative text-white/90 hover:text-white whitespace-nowrap"
             onClick={logout}
             aria-label="Logout"
             tabIndex="0"
           >
-            <span className={`transition-colors duration-300 ${isHovered ? 'text-white' : 'text-white/90'}`}>Logout</span>
+            Logout
           </button>
         </div>
       ) : (
-        <button 
-          className="font-medium text-sm py-1.5 px-4 rounded-md border border-[#2e2e3a] bg-[#111118]/40 hover:bg-[#111118]/80 transition-all duration-300 relative"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onClick={login}
-          aria-label="Login"
-          tabIndex="0"
-        >
-          <span className={`transition-colors duration-300 ${isHovered ? 'text-white' : 'text-white/90'}`}>
-            Login con Google
-          </span>
-        </button>
+        <LoginGoogleButton onClick={login} withGradientEffect={true} />
       )}
     </div>
   );
@@ -173,118 +147,27 @@ const ProjectButton = () => {
         }}
       />
       <button 
-        className="font-medium text-sm py-1.5 px-4 rounded-md border border-[#2e2e3a] bg-[#111118]/40 hover:bg-[#111118]/80 transition-all duration-300 relative"
+        className="font-medium text-sm py-1.5 px-4 rounded-md border border-[#2e2e3a] bg-[#111118]/60 hover:bg-[#111118]/90 transition-all duration-300 relative text-white/90 hover:text-white"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={login}
         aria-label="Register account"
         tabIndex="0"
       >
-        <span className={`transition-colors duration-300 ${isHovered ? 'text-white' : 'text-white/90'}`}>Register</span>
+        Register
       </button>
     </div>
   );
 };
 
 /**
- * NavLink Component - Individual navigation item
- * @param {NavLinkProps} props - Component props
- */
-const NavLink = ({ to, label, activeLink, onSelect, registerRef }) => {
-  const isActive = activeLink === to.replace('/', '');
-  const linkRef = useRef(null);
-  const linkId = to.replace('/', '');
-  const [isHovered, setIsHovered] = useState(false);
-  
-  useEffect(() => {
-    if (linkRef.current) {
-      registerRef({ id: linkId || 'home', element: linkRef.current });
-    }
-  }, [linkId, registerRef]);
-  
-  const handleClick = (e) => {
-    // No prevenimos el evento por defecto para permitir la navegación
-    onSelect(linkId || 'home');
-  };
-  
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSelect(linkId || 'home');
-    }
-  };
-  
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
-  
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-  };
-  
-  return (
-    <div ref={linkRef} className="relative px-1">
-      <Link 
-        to={to}
-        className={`text-sm py-2 px-1.5 transition-all duration-300 ${
-          isActive 
-            ? 'text-white' 
-            : 'text-white/80 hover:text-white'
-        }`}
-        style={{
-          textShadow: isActive ? '0 0 3px rgba(96, 200, 255, 0.4)' : (isHovered ? '0 0 3px rgba(189, 79, 255, 0.3)' : 'none'),
-          letterSpacing: '0.02em'
-        }}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        tabIndex="0"
-        aria-current={isActive ? 'page' : undefined}
-        aria-label={`Navegar a ${label}`}
-      >
-        {label}
-      </Link>
-    </div>
-  );
-};
-
-/**
- * Navbar Component - Clean, modern navigation bar
+ * Navbar Component - Refactorizado
  */
 const Navbar = () => {
-  const [activeLink, setActiveLink] = useState('');
-  const [linkRefs, setLinkRefs] = useState({});
-  const [indicatorStyle, setIndicatorStyle] = useState({
-    left: 0,
-    width: 0,
-    opacity: 0,
-    transition: 'none'
-  });
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const location = useLocation();
+  // Estado para menú móvil
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Detectar la URL actual para activar el enlace correspondiente
-  useEffect(() => {
-    const path = location.pathname;
-    
-    // Si estamos en la página principal, no activar ningún enlace
-    if (path === '/') {
-      setActiveLink('');
-      return;
-    }
-    
-    // Extraer la ruta sin la barra inicial
-    const routePath = path.replace('/', '');
-    
-    // Activar el enlace según la ruta actual
-    setActiveLink(routePath);
-  }, [location]);
-  
-  /**
-   * Navigation links data
-   * @type {Array<{id: string, to: string, label: string}>}
-   */
+  // Links de navegación
   const navLinks = [
     { id: 'news', to: '/news', label: 'News' },
     { id: 'market', to: '/market', label: 'Market' },
@@ -292,129 +175,105 @@ const Navbar = () => {
     { id: 'team', to: '/team', label: 'Team' }
   ];
   
-  // Usar useCallback para evitar recrear esta función en cada renderizado
-  const registerLinkRef = useCallback((linkData) => {
-    setLinkRefs(prev => {
-      // Solo actualizar si realmente hay un cambio
-      if (prev[linkData.id] === linkData.element) {
-        return prev;
-      }
-      return { ...prev, [linkData.id]: linkData.element };
-    });
-  }, []);
-  
-  useEffect(() => {
-    // Solo actualizar la posición del indicador cuando tenemos referencias a los enlaces
-    if (linkRefs[activeLink] && activeLink !== '') {
-      const activeElement = linkRefs[activeLink];
-      const { offsetLeft, offsetWidth } = activeElement;
-      const targetLeft = offsetLeft + 8;
-      const targetWidth = offsetWidth - 16;
-      
-      // Si no es la primera vez (opacity > 0), ejecutar la animación de transición
-      if (indicatorStyle.opacity > 0) {
-        // Fase 1: Contraer la línea desde la derecha
-        setIsTransitioning(true);
-        setIndicatorStyle(prev => ({
-          ...prev,
-          width: 0,
-          // La posición left se mantiene igual (no va al centro)
-          transition: 'width 0.2s ease-in-out'
-        }));
-        
-        // Fase 2: Mover la línea (punto) a la nueva posición
-        setTimeout(() => {
-          setIndicatorStyle(prev => ({
-            ...prev,
-            left: targetLeft,
-            transition: 'left 0.2s ease-in-out'
-          }));
-          
-          // Fase 3: Expandir la línea hacia la derecha
-          setTimeout(() => {
-            setIndicatorStyle({
-              left: targetLeft,
-              width: targetWidth,
-              opacity: 1,
-              transition: 'width 0.2s ease-in-out'
-            });
-            
-            // Finalizar transición
-            setTimeout(() => {
-              setIsTransitioning(false);
-            }, 200);
-          }, 200);
-        }, 200);
-      } else {
-        // Primera vez - simplemente mostrar
-        setIndicatorStyle({
-          left: targetLeft,
-          width: targetWidth,
-          opacity: 1,
-          transition: 'none'
-        });
-      }
-    } else if (activeLink === '') {
-      // Si no hay enlace activo, ocultar el indicador
-      setIndicatorStyle({
-        left: 0,
-        width: 0,
-        opacity: 0,
-        transition: 'opacity 0.3s ease-in-out'
-      });
-    }
-  }, [activeLink, linkRefs, indicatorStyle.opacity]);
-  
-  const handleLinkSelect = useCallback((linkId) => {
-    if (!linkId || isTransitioning) return;
-    setActiveLink(linkId);
-  }, [isTransitioning]);
+  // Función para activar/desactivar menú móvil
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Función para cerrar menú móvil al hacer clic en un enlace
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
   
   return (
-    <header className="bg-[#111118] border-b border-[#2e2e3a] shadow-sm" style={{boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(189, 79, 255, 0.1)'}}>
+    // Cabecera con estilos base
+    <header className="bg-[#111118] border-b border-[#2e2e3a] shadow-sm sticky top-0 z-40" 
+            style={{boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(189, 79, 255, 0.1)'}}>
       <div className="w-full max-w-7xl mx-auto">
         <div className="flex justify-between items-center h-20 px-3">
-          {/* Contenedor izquierdo - Logo y enlaces */}
-          <div className="flex items-center space-x-4">
-            {/* Logo */}
-            <div className="flex items-center justify-center w-32 h-full overflow-visible mr-2">
-              <Logo />
-            </div>
-            
-            {/* Nav Links */}
-            <div className="hidden md:block relative">
-              <nav className="flex items-center space-x-4">
-                {navLinks.map((link) => (
-                  <NavLink
-                    key={link.id}
-                    to={link.to}
-                    label={link.label}
-                    activeLink={activeLink}
-                    onSelect={handleLinkSelect}
-                    registerRef={registerLinkRef}
-                  />
-                ))}
-              </nav>
-              
-              {/* Indicador deslizante */}
-              <div 
-                className="absolute bottom-0 h-[1px] rounded-full"
-                style={{
-                  left: `${indicatorStyle.left}px`,
-                  width: `${indicatorStyle.width}px`,
-                  opacity: indicatorStyle.opacity,
-                  transition: indicatorStyle.transition,
-                  background: 'linear-gradient(to right, #60c8ff, #bd4fff)',
-                  boxShadow: '0 0 4px rgba(96, 200, 255, 0.4), 0 0 6px rgba(189, 79, 255, 0.3)'
-                }}
-              />
-            </div>
+          
+          {/* Izquierda: Logo */} 
+          <div className="flex-shrink-0">
+            <Logo />
           </div>
           
-          {/* Contenedor derecho - Botones */}
-          <div className="flex items-center space-x-2 pr-1">
+          {/* Centro: Nav Links (Desktop) */} 
+          <div className="hidden md:flex md:items-center md:space-x-4 lg:space-x-6"> 
+            {navLinks.map((link) => (
+              <RouterNavLink
+                key={link.id}
+                to={link.to}
+                // Clase base y activa usando la función de NavLink
+                className={({ isActive }) => 
+                  `text-sm py-2 px-1.5 transition-colors duration-300 border-b-2 
+                  ${isActive 
+                    ? 'text-sky-300 border-sky-400' 
+                    : 'text-white/80 border-transparent hover:text-white hover:border-white/50'}`
+                }
+                aria-label={`Navegar a ${link.label}`}
+              >
+                {link.label}
+              </RouterNavLink>
+            ))}
+          </div>
+          
+          {/* Derecha: Botones (Login/Register) */} 
+          <div className="hidden md:flex md:items-center space-x-2 pr-1"> 
             <LoginButton />
             <ProjectButton />
+          </div>
+
+          {/* Botón Menú Móvil (Solo visible en pantallas pequeñas) */} 
+          <div className="md:hidden flex items-center"> 
+            <button
+              onClick={toggleMobileMenu}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              aria-controls="mobile-menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-label="Abrir menú principal"
+            >
+              <span className="sr-only">Abrir menú principal</span>
+              {isMobileMenuOpen ? (
+                <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Panel Menú Móvil */} 
+      {/* Usar clases de transición para animación suave */} 
+      <div 
+        className={`md:hidden absolute top-full left-0 w-full bg-[#111118] border-b border-[#2e2e3a] shadow-lg transition-all duration-300 ease-in-out transform ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0 pointer-events-none'}`}
+        id="mobile-menu"
+      >
+        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          {navLinks.map((link) => (
+            <RouterNavLink
+              key={link.id}
+              to={link.to}
+              onClick={closeMobileMenu} // Cerrar menú al hacer clic
+              className={({ isActive }) => 
+                `block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 
+                ${isActive 
+                  ? 'bg-gradient-to-r from-blue-600/30 to-purple-700/30 text-white' 
+                  : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'}`
+              }
+              aria-label={`Navegar a ${link.label}`}
+            >
+              {link.label}
+            </RouterNavLink>
+          ))}
+        </div>
+         {/* Botones en menú móvil */}
+        <div className="pt-4 pb-3 border-t border-gray-700">
+          <div className="px-2 space-y-2">
+             {/* Reutilizar LoginButton y ProjectButton o crear versiones específicas para móvil si es necesario */} 
+            <div className="px-1"><LoginButton /></div>
+            <div className="px-1"><ProjectButton /></div>
           </div>
         </div>
       </div>

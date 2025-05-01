@@ -1,0 +1,13 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Common Reusable Components (`src/components/common/`)
+
+This directory contains components designed for reuse across different parts of the application.
+
+- **`[SocialIcon.jsx](mdc:tibianity-frontend/src/components/common/SocialIcon.jsx)`**: Displays a social media icon link with hover effects. Used in `[Footer.jsx](mdc:tibianity-frontend/src/components/Footer.jsx)` and `[ComingSoon.jsx](mdc:tibianity-frontend/src/components/ComingSoon/ComingSoon.jsx)`.
+- **`[LoginGoogleButton.jsx](mdc:tibianity-frontend/src/components/common/LoginGoogleButton.jsx)`**: Renders the standard "Login con Google" button. Includes an optional `withGradientEffect` prop to match the style of the Register button in `[Navbar.jsx](mdc:tibianity-frontend/src/components/Navbar.jsx)`.
+
+When creating new general-purpose UI elements, consider placing them here.

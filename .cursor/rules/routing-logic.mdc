@@ -1,0 +1,28 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Routing Logic (`App.jsx`)
+
+The main routing logic is defined in `[App.jsx](mdc:tibianity-frontend/src/App.jsx)` using `react-router-dom` and depends on the user's authentication state and role (`isAdmin`) provided by `[AuthContext.jsx](mdc:tibianity-frontend/src/context/AuthContext.jsx)`.
+
+**Current Development Phase Rules:**
+
+1.  **Admin User (`isAuthenticated=true`, `isAdmin=true`):**
+    -   Uses `[AdminLayout.jsx](mdc:tibianity-frontend/src/layouts/AdminLayout.jsx)` for all views.
+    -   Sees the real `[LandingPage.jsx](mdc:tibianity-frontend/src/pages/LandingPage.jsx)` at the root path (`/`).
+    -   Can access their profile at `/profile`.
+    -   Can access public pages like `/news`, `/market`, etc.
+    -   Can access the admin panel routes under `/admin` (e.g., `/admin/dashboard`, `/admin/email`). `/admin` redirects to `/admin/dashboard`.
+    -   Undefined routes show a `NotFound` component within the `AdminLayout`.
+
+2.  **Normal User (`isAuthenticated=true`, `isAdmin=false`):**
+    -   Uses `[UserLayout.jsx](mdc:tibianity-frontend/src/layouts/UserLayout.jsx)` for all views.
+    -   Sees `[ComingSoonPage.jsx](mdc:tibianity-frontend/src/pages/ComingSoonPage.jsx)` at the root path (`/`).
+    -   Can **only** access their profile at `/profile`.
+    -   All other routes (including `/news`, `/market`, undefined routes) redirect back to the root (`/`), showing `ComingSoonPage`.
+
+3.  **Guest User (`isAuthenticated=false`):**
+    -   Uses `[GuestLayout.jsx](mdc:tibianity-frontend/src/layouts/GuestLayout.jsx)` for all views.
+    -   Sees `[ComingSoonPage.jsx](mdc:tibianity-frontend/src/pages/ComingSoonPage.jsx)` at the root path (`/`) and for all other undefined routes.

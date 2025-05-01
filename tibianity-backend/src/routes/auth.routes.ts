@@ -1,20 +1,22 @@
 import express from 'express';
-import passport from 'passport';
+import passport from '../config/passport.config';
 import { getProfile, logout } from '../controllers/auth.controller';
 import { isAuthenticated } from '../middleware/auth.middleware';
+import { authLimiter } from '../config/rateLimiters.config';
 
 const router = express.Router();
 
 // Ruta para iniciar el proceso de autenticación con Google
-router.get('/google', passport.authenticate('google', {
+router.get('/google', authLimiter, passport.authenticate('google', {
   scope: ['profile', 'email']
 }));
 
 // Ruta de callback después de la autenticación con Google
 router.get('/google/callback', 
+  authLimiter,
   passport.authenticate('google', {
-    successRedirect: process.env.FRONTEND_URL || 'http://localhost:3000',
-    failureRedirect: '/auth/google/failure'
+    successRedirect: `${process.env.FRONTEND_URL}/auth/success`,
+    failureRedirect: `${process.env.FRONTEND_URL}/auth/failure`
   })
 );
 
@@ -27,6 +29,6 @@ router.get('/google/failure', (_req, res) => {
 router.get('/profile', isAuthenticated, getProfile);
 
 // Ruta para cerrar sesión
-router.get('/logout', logout);
+router.post('/logout', logout);
 
 export default router; 

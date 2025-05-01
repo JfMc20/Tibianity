@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Project Structure Overview
+
+This frontend project uses React and Tailwind CSS, structured as follows:
+
+- **`src/`**: Main source code directory.
+  - **`pages/`**: Contains top-level page components mapped to routes. Examples:
+    - `[LandingPage.jsx](mdc:tibianity-frontend/src/pages/LandingPage.jsx)`: The main public landing page (currently admin-only view).
+    - `[ComingSoonPage.jsx](mdc:tibianity-frontend/src/pages/ComingSoonPage.jsx)`: Displayed for restricted access.
+    - `[UserProfilePage.jsx](mdc:tibianity-frontend/src/pages/UserProfilePage.jsx)`: User's profile page.
+    - `Admin/`: Contains pages specific to the admin panel (e.g., `[AdminDashboard.jsx](mdc:tibianity-frontend/src/pages/Admin/AdminDashboard.jsx)`).
+  - **`components/`**: Contains UI components.
+    - `common/`: Reusable components shared across the application (e.g., `[SocialIcon.jsx](mdc:tibianity-frontend/src/components/common/SocialIcon.jsx)`, `[LoginGoogleButton.jsx](mdc:tibianity-frontend/src/components/common/LoginGoogleButton.jsx)`).
+    - `LandingPage/`: Components specific to the main landing page (e.g., `[Hero.jsx](mdc:tibianity-frontend/src/components/LandingPage/Hero.jsx)`, `[Team.jsx](mdc:tibianity-frontend/src/components/LandingPage/Team.jsx)`).
+    - `Admin/`: Components specific to the admin panel (e.g., `[SidePanelMenu.jsx](mdc:tibianity-frontend/src/components/Admin/SidePanelMenu.jsx)`).
+    - `ComingSoon/`: Components specific to the Coming Soon page.
+    - `[Navbar.jsx](mdc:tibianity-frontend/src/components/Navbar.jsx)`: Top navigation bar.
+    - `[Footer.jsx](mdc:tibianity-frontend/src/components/Footer.jsx)`: Site footer.
+  - **`layouts/`**: Defines the overall page structure for different sections.
+    - `[AdminLayout.jsx](mdc:tibianity-frontend/src/layouts/AdminLayout.jsx)`: Layout for admin sections (includes toggleable `[SidePanelMenu.jsx](mdc:tibianity-frontend/src/components/Admin/SidePanelMenu.jsx)`).
+    - `[UserLayout.jsx](mdc:tibianity-frontend/src/layouts/UserLayout.jsx)`: Layout for logged-in normal users.
+    - `[GuestLayout.jsx](mdc:tibianity-frontend/src/layouts/GuestLayout.jsx)`: Layout for logged-out users.
+    - `[PublicLayout.jsx](mdc:tibianity-frontend/src/layouts/PublicLayout.jsx)`: Intended for future public pages.
+  - **`context/`**: Contains React Context providers.
+    - `[AuthContext.jsx](mdc:tibianity-frontend/src/context/AuthContext.jsx)`: Manages authentication state and user info.
+  - **`config/`**: Configuration files (e.g., API endpoints).
+  - **`api/`**: Functions for making API calls (if applicable).
+  - **`utils/`**: Utility functions.
+  - **`styles/`**: Global styles or base Tailwind configurations if needed.
+- **`public/`**: Static assets.
+- **`[App.jsx](mdc:tibianity-frontend/src/App.jsx)`**: Main application component, handles routing logic.

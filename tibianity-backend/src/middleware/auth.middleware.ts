@@ -7,8 +7,11 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Middleware para verificar si el usuario está autenticado
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  // En modo desarrollo, permitir acceso sin autenticación
+  // ¡¡¡ADVERTENCIA DE SEGURIDAD!!!
+  // En modo desarrollo, SE ESTÁ SALTANDO la verificación de autenticación.
+  // ASEGÚRATE de que NODE_ENV esté configurado como 'production' en el entorno de producción.
   if (isDevelopment) {
+    console.error('\n*** ADVERTENCIA: Saltando verificación de autenticación (isAuthenticated) en modo desarrollo. ¡NO USAR EN PRODUCCIÓN! ***\n');
     return next();
   }
   
@@ -26,10 +29,11 @@ export const isAdmin = async (
   res: Response,
   next: NextFunction
 ) => {
-  // En modo desarrollo, permitir acceso de administrador sin verificación
-  // ¡PRECAUCIÓN! Esto debería quitarse o protegerse adecuadamente para producción
+  // ¡¡¡ADVERTENCIA DE SEGURIDAD!!!
+  // En modo desarrollo, SE ESTÁ SALTANDO la verificación de rol de administrador.
+  // ASEGÚRATE de que NODE_ENV esté configurado como 'production' en el entorno de producción.
   if (isDevelopment) {
-    console.warn("Advertencia: Saltando verificación de administrador en modo desarrollo.");
+    console.error('\n*** ADVERTENCIA: Saltando verificación de administrador (isAdmin) en modo desarrollo. ¡NO USAR EN PRODUCCIÓN! ***\n');
     return next();
   }
 
@@ -76,31 +80,5 @@ export const isAdmin = async (
   }
 };
 
-// Middleware para verificar si el usuario autenticado es administrador
-// Nota: Esta función 'isAdminMiddleware' parece redundante o una versión anterior.
-// La función 'isAdmin' anterior es la que se usa en admin.routes.ts.
-// Considera eliminar o refactorizar esta función si no se usa.
-export const isAdminMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Primero, asegurarnos que esté autenticado (aunque isAuthenticated ya debería estar antes en la ruta)
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ message: 'Acceso no autorizado.' });
-  }
-
-  // Obtener el perfil del usuario desde req.user (adjuntado por Passport deserializeUser)
-  // Necesitamos asegurarnos que 'req.user' tenga la info de 'isAdmin' o 'email'
-  // Ajusta el tipo según lo que realmente adjunta deserializeUser
-  // Asumiendo que req.user es del tipo UserProfile como se define en passport.config.ts
-  const userProfile = req.user as UserProfile;
-
-  // Verificar si es administrador
-  // Usaremos la comparación de email ya que UserProfile tiene el array emails
-  // ¡Asegúrate de que deserializeUser adjunte el email a req.user correctamente!
-  const ADMIN_EMAIL_CHECK = 'fraan.mujica1@gmail.com'; // Temporalmente hardcodeado, ¡mejor importar!
-
-  if (userProfile.emails && userProfile.emails[0]?.value === ADMIN_EMAIL_CHECK) {
-     return next(); // Es administrador, continuar
-  } else {
-    // Si no cumple ninguna condición de admin
-    return res.status(403).json({ message: 'Acceso prohibido. Se requieren permisos de administrador.' });
-  }
-}; 
+// La función isAdminMiddleware ha sido eliminada por redundancia.
+// La lógica correcta de verificación de administrador está en la función 'isAdmin' anterior. 

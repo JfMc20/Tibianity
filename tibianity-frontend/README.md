@@ -39,9 +39,9 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 ## 🛠️ Tecnologías
 
 - **Framework**: React.js 18
-- **Enrutamiento**: React Router DOM v7
+- **Enrutamiento**: React Router DOM v6+ (v7 implícita)
 - **Estilos**: Tailwind CSS 3
-- **Peticiones HTTP**: Axios
+- **Peticiones HTTP**: Axios (o `fetch` nativo)
 - **Autenticación**: Google OAuth (integrado con backend)
 - **Fuentes**: Inter (Google Fonts)
 - **Metadatos**: Open Graph para compartir en redes sociales
@@ -50,7 +50,6 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 - **Visualización de Datos (Admin)**: Chart.js (`react-chartjs-2`)
 - **Selección de Fechas (Admin)**: React Datepicker (`react-datepicker`)
 - **Manejo de Fechas**: Date-fns
-- **Partículas Animadas**: tsparticles (`@tsparticles/react`)
 
 ## 🔧 Instalación
 
@@ -143,37 +142,40 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │
   ├── /src                  # Código fuente de la aplicación
   │   ├── /components       # Componentes reutilizables
-  │   │   ├── /Admin        # Componentes específicos del panel admin
-  │   │   │   ├── SidePanelMenu.jsx
-  │   │   │   └── EmailSubscribers.jsx
-  │   │   ├── /ComingSoon   # Componentes de la página ComingSoon
-  │   │   │   └── ComingSoon.jsx 
-  │   │   ├── Navbar.jsx    # Barra de navegación principal
-  │   │   ├── Hero.jsx      # Sección principal de la página de inicio
-  │   │   ├── Services.jsx  # Sección de servicios
-  │   │   ├── Lore.jsx      # Componente para el lore
-  │   │   ├── Team.jsx      # Componente de equipo de creadores
+  │   │   ├── /common       # Componentes genéricos y reutilizables (SocialIcon, LoginGoogleButton)
+  │   │   ├── /LandingPage  # Componentes específicos de la Landing Page (Hero, Lore, Services, Team)
+  │   │   ├── /Admin        # Componentes específicos del panel admin (SidePanelMenu, EmailSubscribers)
+  │   │   ├── /ComingSoon   # Componentes específicos de la página ComingSoon
+  │   │   ├── Navbar.jsx    # Barra de navegación principal (Usada en User/Guest layouts)
   │   │   └── Footer.jsx    # Pie de página global
+  │   │
+  │   ├── /layouts          # Componentes de Layout (estructura de página)
+  │   │   ├── AdminLayout.jsx   # Layout para Admin (con SidePanelMenu toggleable)
+  │   │   ├── UserLayout.jsx    # Layout para Usuarios normales
+  │   │   ├── GuestLayout.jsx   # Layout para Invitados
+  │   │   └── PublicLayout.jsx  # Layout base para páginas públicas (futuro)
+  │   │
+  │   ├── /pages            # Páginas principales y vistas (contenedores de ruta)
+  │   │   ├── LandingPage.jsx       # Página principal real (Hero, Services, etc.)
+  │   │   ├── ComingSoonPage.jsx    # Página mostrada durante construcción/acceso restringido
+  │   │   ├── UserProfilePage.jsx   # Página de perfil de usuario
+  │   │   ├── News.jsx              # Página de noticias
+  │   │   ├── Market.jsx            # Página del mercado virtual
+  │   │   ├── LorePage.jsx          # Página de lore
+  │   │   ├── TeamPage.jsx          # Página de equipo
+  │   │   ├── ChatPage.jsx          # Página de chat
+  │   │   └── /Admin                # Páginas del panel de admin (AdminDashboard, EmailSenderPage)
   │   │
   │   ├── /context          # Contextos de React (estado global)
   │   │   └── AuthContext.jsx # Contexto para la autenticación
   │   │
-  │   ├── /pages            # Páginas principales y vistas
-  │   │   ├── AdminDashboard.jsx
-  │   │   ├── EmailSenderPage.jsx # Nueva página para enviar correos
-  │   │   ├── News.jsx      # Página de noticias
-  │   │   ├── Market.jsx    # Página del mercado virtual
-  │   │   ├── LorePage.jsx  # Página de lore
-  │   │   ├── TeamPage.jsx  # Página de equipo
-  │   │   └── ... (otras páginas)
-  │   │
-  │   ├── /styles           # Estilos CSS adicionales
+  │   ├── /styles           # Estilos CSS adicionales (index.css)
   │   ├── /config           # Archivos de configuración (constants.js)
   │   ├── /api              # Lógica de llamadas a API (chat.js)
   │   ├── /utils            # Funciones de utilidad
-  │   ├── App.jsx           # Componente principal y rutas
+  │   ├── App.jsx           # Componente principal y lógica de enrutamiento
   │   ├── index.js          # Punto de entrada de la aplicación
-  │   └── index.css         # Estilos globales
+  │   └── index.css         # Estilos globales importados
   │
   ├── package.json          # Dependencias y scripts
   ├── tailwind.config.js    # Configuración de Tailwind CSS
@@ -184,68 +186,59 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 ## 🧩 Componentes Principales
 
 ### App.jsx
-- Componente raíz de la aplicación, renderizado por `index.js`.
-- Configura el enrutador principal (`BrowserRouter`) y define las rutas (`<Routes>`, `<Route>`) para todas las páginas, incluyendo las rutas administrativas (`/admin`, `/admin/email`).
-- Establece la estructura de diseño general, incluyendo componentes persistentes como `Navbar` y `Footer` que se muestran en todas las páginas.
-- **Renderiza condicionalmente** la interfaz principal (con `Navbar`) o el componente `ComingSoon` basado en el estado de autenticación del usuario.
-- **Protege las rutas administrativas** asegurando que solo se rendericen si el usuario autenticado es administrador (`isAdmin`).
-- Envuelve toda la aplicación dentro del `AuthProvider` (`AuthContext.jsx`), asegurando que el estado de autenticación y las funciones relacionadas estén disponibles globalmente para todos los componentes hijos.
-- Importa y utiliza los componentes de página (`News`, `Market`, etc.) para asociarlos a sus respectivas rutas.
+- Componente raíz que renderiza el `AuthProvider` y el `Router`.
+- Contiene `AppContent` que implementa la lógica principal de enrutamiento usando `<Routes>` y `<Route>`.
+- **Determina qué Layout (`AdminLayout`, `UserLayout`, `GuestLayout`) y qué página mostrar** en la ruta raíz (`/`) y otras rutas, basándose en el estado de autenticación y el rol (`isAdmin`) del `AuthContext`.
+- Define las rutas anidadas específicas para cada rol/layout.
+
+### Layouts (`src/layouts/`)
+- **AdminLayout.jsx**: Define la estructura para las secciones de administración. Incluye un `SidePanelMenu.jsx` (que se puede ocultar/mostrar) y un área de contenido principal (`<Outlet />`).
+- **UserLayout.jsx**: Estructura para usuarios normales autenticados. Incluye `Navbar.jsx`, `Footer.jsx` y un `<Outlet />`.
+- **GuestLayout.jsx**: Estructura para usuarios no autenticados (invitados). Incluye `Navbar.jsx`, `Footer.jsx` y un `<Outlet />`.
+- **PublicLayout.jsx**: Layout genérico con `Navbar.jsx` y `Footer.jsx`, pensado para futuras páginas públicas.
 
 ### Navbar.jsx
-- Barra de navegación responsive con logo animado y efectos neón
-- Enlaces a todas las secciones principales con efectos hover
-- Integración con AuthContext para mostrar el estado de autenticación
-- Botones de Login/Logout con Google OAuth
-- Implementación de componentes internos (Logo, LoginButton, NavLink)
-
-### Hero.jsx
-- Componente de hero con carrusel de imágenes automático
-- Efectos visuales de neón y animaciones CSS
-- Título principal con efectos de shimmer y gradientes
-
-### AuthContext.jsx
-- Proveedor de contexto para gestionar la autenticación
-- Funciones para inicio y cierre de sesión
-- Integración con el backend para verificar el estado de la sesión
-- Almacenamiento de datos del usuario autenticado
-
-### News.jsx
-- Página para mostrar noticias oficiales de Tibia
-- Carga de noticias desde archivo JSON local (news-es.json) con traducciones
-- Fallback a API del backend si el archivo local no está disponible
-- Visualización de noticias con categorías, fechas y contenido formateado
-- Funcionalidad de expansión/colapso para noticias largas
+- Barra de navegación superior responsive, utilizada por `UserLayout` y `GuestLayout`.
+- Muestra el logo, enlaces principales (`/news`, `/market`, etc.) y botones de Login/Register.
+- Usa `[LoginGoogleButton.jsx](mdc:tibianity-frontend/src/components/common/LoginGoogleButton.jsx)`.
 
 ### Footer.jsx
-- Pie de página global que se muestra en todas las páginas
-- Enlaces a redes sociales y otros recursos
+- Pie de página global con enlaces y información de contacto.
+- Usa el componente reutilizable `[SocialIcon.jsx](mdc:tibianity-frontend/src/components/common/SocialIcon.jsx)`.
 
-### ComingSoon.jsx
-- Página/Componente de marcador de posición mostrado mientras la aplicación principal está en desarrollo o para usuarios no autenticados.
-- Integra `AuthContext` para mostrar diferentes mensajes y opciones (Login/Logout) dependiendo del estado de autenticación.
-- Incluye el logo de Tibianity y enlaces a redes sociales.
-- Muestra un formulario de suscripción por correo (actualmente sin funcionalidad de envío).
-- Utiliza `@tsparticles/react` para un fondo animado de partículas personalizable.
-- Presenta una ilustración decorativa y maneja la visualización de errores de autenticación.
-- Diseño responsive adaptado a diferentes tamaños de pantalla con efectos visuales neón.
-- **Formulario de Suscripción**: Incluye un formulario para que los usuarios ingresen su correo electrónico. Llama al endpoint `/api/subscribe` del backend para registrar la suscripción.
-- Muestra feedback al usuario sobre el éxito o error de la suscripción.
+### LandingPage.jsx (`src/pages/`)
+- Página principal del sitio que ensambla las secciones de contenido (`Hero`, `Services`, `Lore`, `Team`).
+- **Actualmente visible solo por administradores** en la ruta raíz (`/`).
+
+### ComingSoonPage.jsx (`src/pages/`)
+- Página que se muestra a **usuarios normales** en la ruta raíz (`/`) y en cualquier ruta a la que no tengan acceso permitido.
+- También se muestra a **invitados** en todas las rutas.
+- Contiene el formulario de suscripción y lógica de login/logout. Usa `[ComingSoon.jsx](mdc:tibianity-frontend/src/components/ComingSoon/ComingSoon.jsx)` para la UI.
+
+### Componentes Comunes (`src/components/common/`)
+- **SocialIcon.jsx**: Icono de red social reutilizable.
+- **LoginGoogleButton.jsx**: Botón estándar "Login con Google", con opción de efecto hover.
 
 ### Admin Components (`src/components/Admin/`)
-- **SidePanelMenu.jsx**: Menú lateral fijo para la navegación dentro del panel de administración. Usa `NavLink` y `@heroicons/react`.
-- **EmailSubscribers.jsx**: Componente de formulario que permite a los administradores escribir un asunto y cuerpo (HTML) para un correo y enviarlo a todos los suscriptores registrados a través del endpoint `/api/admin/send-newsletter` del backend.
+- **SidePanelMenu.jsx**: Menú lateral usado en `AdminLayout`.
+- Otros componentes específicos del panel (gráficos, tablas, formularios).
 
-## 📄 Sistema de Páginas y Rutas Administrativas
+## 📄 Sistema de Páginas y Rutas (Lógica en `App.jsx`)
 
-- **Página de Inicio (/)**: Combina Hero, Services, Lore y Team
-- **News (/news)**: Página de noticias con integración de backend/archivo local
-- **Market (/market)**: Página para el mercado virtual
-- **Lore (/lore)**: Página completa dedicada a la historia y lore
-- **Team (/team)**: Página del equipo de creadores
-- **Chat (/chat)**: Página de chat con LLM
-- **Admin Dashboard (`/admin`)**: Página principal del panel de administración. Muestra métricas clave, filtros y tablas de usuarios/sesiones. Incluye el `SidePanelMenu`.
-- **Enviar Correos (`/admin/email`)**: Página dedicada al envío de correos masivos. Contiene el `SidePanelMenu` y el componente `EmailSubscribers`.
+La aplicación implementa un sistema de enrutamiento basado en roles durante la fase de desarrollo actual:
+
+- **Administrador (Logueado, `isAdmin=true`):**
+  - Ve la `LandingPage` real en `/`.
+  - Accede a todas las páginas públicas (`/news`, `/market`, etc.).
+  - Accede a su perfil (`/profile`).
+  - Accede al panel de administración en `/admin` (redirige a `/admin/dashboard`) y sus sub-rutas (`/admin/email`, etc.).
+  - Rutas no definidas muestran `NotFound` (dentro del `AdminLayout`).
+- **Usuario Normal (Logueado, `isAdmin=false`):**
+  - Ve `ComingSoonPage` en `/`.
+  - **Solo** puede acceder a su perfil en `/profile`.
+  - Cualquier otra ruta lo redirige a `/` (mostrando `ComingSoonPage`).
+- **Invitado (No logueado):**
+  - Ve `ComingSoonPage` en `/` y en cualquier otra ruta.
 
 ## 🔑 Autenticación
 
@@ -361,12 +354,15 @@ Este módulo maneja la comunicación con un servicio externo (probablemente un L
 ## 🚧 Estado y Próximos Pasos
 
 ### Estado Actual
-- Sistema de rutas implementado (incluyendo rutas admin)
-- Diseño visual y componentes principales creados
-- Integración con backend para autenticación y noticias
-- Funcionalidad de suscripción por correo implementada
-- Panel de administración básico con visualización de datos y gestión de roles
-- Funcionalidad de envío de correos a suscriptores implementada (vía Resend en backend)
+- [x] Sistema de rutas refactorizado y basado en roles (Admin, User, Guest).
+- [x] Lógica de acceso a páginas restringida según el rol durante desarrollo.
+- [x] Diseño visual y componentes principales creados.
+- [x] Integración con backend para autenticación y noticias.
+- [x] Funcionalidad de suscripción por correo implementada.
+- [x] Panel de administración básico con visualización de datos y gestión de roles.
+- [x] Funcionalidad de envío de correos a suscriptores implementada.
+- [x] Estructura de componentes refactorizada (`common`, `LandingPage`).
+- [x] UI de AdminLayout y Navbar ajustada (sidebar toggle, logo, hover botones).
 
 ### Próximos Desarrollos
 - Implementación completa del mercado virtual

@@ -1,124 +1,121 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Services from './components/Services';
-import Lore from './components/Lore';
-import Team from './components/Team';
-import Footer from './components/Footer';
 
-// Import Pages
-import News from './pages/News';
-import Market from './pages/Market';
+// Importar Layouts
+import AdminLayout from './layouts/AdminLayout';
+import UserLayout from './layouts/UserLayout';
+import GuestLayout from './layouts/GuestLayout';
+// PublicLayout no se usa activamente ahora, pero está listo
+// import PublicLayout from './layouts/PublicLayout'; 
+
+// Importar Páginas
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import EmailSenderPage from './pages/Admin/EmailSenderPage';
+import UserProfilePage from './pages/UserProfilePage';
+import ComingSoonPage from './pages/ComingSoonPage'; // Nombre correcto
+import LandingPage from './pages/LandingPage'; // Nueva página real
+import AuthCallbackHandler from './components/Auth/AuthCallbackHandler';
+// Importar páginas públicas
+import NewsPage from './pages/News'; // Asumiendo que News.jsx es la página
+import MarketPage from './pages/Market'; // Asumiendo que Market.jsx es la página
 import LorePage from './pages/LorePage';
 import TeamPage from './pages/TeamPage';
-import AdminDashboard from './pages/AdminDashboard';
-import ComingSoon from './components/ComingSoon/ComingSoon.jsx';
 import ChatPage from './pages/ChatPage';
-import EmailSenderPage from './pages/EmailSenderPage';
 
-// Componnet to check backend status
-const ConnectionStatus = () => {
-  const { backendStatus, checkBackendStatus, error } = useAuth();
-  
-  useEffect(() => {
-    // Check connection every minute
-    const interval = setInterval(() => {
-      if (!backendStatus.online) {
-        checkBackendStatus();
-      }
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, [backendStatus.online, checkBackendStatus]);
-  
-  if (!backendStatus.checked || backendStatus.online) {
-    return null;
+// Componente de pantalla de carga simple
+const LoadingScreen = () => (
+  <div className="flex items-center justify-center min-h-screen bg-[#060919] text-white">
+    Cargando aplicación...
+  </div>
+);
+
+// Placeholder para páginas no encontradas
+const NotFound = () => <div className="p-6 text-white text-center min-h-screen flex items-center justify-center bg-[#060919]">404 - Página no encontrada</div>;
+
+/**
+ * Contenido principal con la lógica de enrutamiento refactorizada.
+ */
+const AppContent = () => {
+  const { loading, isAuthenticated, user } = useAuth();
+  const isAdmin = user?.isAdmin === true;
+
+  if (loading) {
+    return <LoadingScreen />;
   }
-  
+
   return (
-    <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-1 px-4 z-50">
-      <p className="text-sm">
-        {error || 'Could not connect to the server. Check if the backend is running.'}
-        <button 
-          onClick={checkBackendStatus}
-          className="ml-2 underline"
-        >
-          Try again
-        </button>
-      </p>
-    </div>
+    <Routes>
+      {/* Ruta pública de autenticación */} 
+      <Route path="/auth/success" element={<AuthCallbackHandler />} />
+
+      {/* Rutas Condicionales por Rol */}
+      {isAuthenticated ? (
+        isAdmin ? (
+          // --- ADMINISTRADOR --- 
+          <> {/* Fragmento para agrupar rutas de admin */} 
+            {/* Ruta para la raíz (/) - Muestra LandingPage con AdminLayout */}
+            <Route path="/" element={<AdminLayout />}> 
+              <Route index element={<LandingPage />} /> 
+              {/* Permitir acceso al perfil desde la raíz también */}
+              <Route path="profile" element={<UserProfilePage />} /> 
+
+              {/* Rutas públicas existentes accesibles por admin */} 
+              <Route path="news" element={<NewsPage />} /> 
+              <Route path="market" element={<MarketPage />} /> 
+              <Route path="lore" element={<LorePage />} /> 
+              <Route path="team" element={<TeamPage />} /> 
+              <Route path="chat" element={<ChatPage />} /> 
+            </Route>
+
+            {/* Rutas específicas bajo /admin - También usan AdminLayout */}
+            <Route path="/admin" element={<AdminLayout />}> 
+              {/* /admin y /admin/dashboard muestran el Dashboard */}
+              <Route index element={<AdminDashboard />} /> 
+              <Route path="dashboard" element={<AdminDashboard />} /> 
+              <Route path="email" element={<EmailSenderPage />} /> 
+              {/* /admin/profile muestra el perfil */}
+              <Route path="profile" element={<UserProfilePage />} /> 
+              {/* Catch-all para /admin/* desconocido */}
+              <Route path="*" element={<NotFound />} /> 
+            </Route>
+
+            {/* Catch-all global para admin si no coincide con / o /admin/* */}
+            {/* Redirige a /admin */} 
+            <Route path="*" element={<Navigate to="/admin" replace />} /> 
+          </>
+        ) : (
+          // --- USUARIO NORMAL --- 
+          // Usa UserLayout para todas sus rutas
+          <Route path="/" element={<UserLayout />}> 
+            {/* En la raíz (/), el usuario normal ve ComingSoon */}
+            <Route index element={<ComingSoonPage />} /> 
+            {/* La única otra ruta accesible es /profile */}
+            <Route path="profile" element={<UserProfilePage />} /> 
+            {/* Cualquier otra ruta redirige a la raíz (donde verá ComingSoon) */}
+            <Route path="*" element={<Navigate to="/" replace />} /> 
+          </Route>
+        )
+      ) : (
+        // --- INVITADO --- 
+        // Usa GuestLayout para todas sus rutas
+        <Route path="/" element={<GuestLayout />}> 
+          {/* Invitado siempre ve ComingSoon en la raíz */}
+          <Route index element={<ComingSoonPage />} /> 
+          {/* Cualquier otra ruta también muestra ComingSoon */}
+          <Route path="*" element={<ComingSoonPage />} /> 
+        </Route>
+      )}
+
+      {/* Un 404 global final, por si acaso */}
+       <Route path="*" element={<NotFound />} /> 
+    </Routes>
   );
 };
 
 /**
- * Main App component
+ * Componente Raíz de la Aplicación
  */
-const AppContent = () => {
-  const { user, isAuthenticated, loading, error } = useAuth();
-  
-  // Determine if it is admin based on the isAdmin field of the user object in the context
-  const isAdmin = user?.isAdmin === true;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-        Loading...
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {isAdmin ? (
-        <div className="min-h-screen flex flex-col bg-[#060919]">
-          <ConnectionStatus />
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              {/* First Route - Home Page */}
-              <Route path="/" element={
-                <>
-                  {/* Hero Section */}
-                  <Hero />
-                  
-                  {/* Services Section con margen negativo */}
-                  <div className="-mt-4 md:-mt-8">
-                    <Services />
-                  </div>
-                  
-                  {/* Lore Section - Introduction to the world */}
-                  <Lore />
-                  
-                  {/* Team Section - Team and sponsors */}
-                  <Team />
-                </>
-              } />
-              
-              {/* Routes for each section */}
-              <Route path="/news" element={<News />} />
-              <Route path="/market" element={<Market />} />
-              <Route path="/lore" element={<LorePage />} />
-              <Route path="/team" element={<TeamPage />} />
-              
-              {/* Route for the admin dashboard */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/email" element={<EmailSenderPage />} />
-              
-              {/* Route for the Chat with LLM page */}
-              <Route path="/chat" element={<ChatPage />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      ) : (
-        <ComingSoon isAuthenticated={isAuthenticated} error={error} />
-      )}
-    </>
-  );
-};
-
 const App = () => {
   return (
     <AuthProvider>

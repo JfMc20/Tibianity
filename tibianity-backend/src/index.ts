@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import subscribeRoutes from './routes/subscribe.routes';
 import { connectDB } from './config/db';
+import { globalLimiter } from './config/rateLimiters.config';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -51,6 +52,13 @@ app.use(express.json());
 
 // Confiar en el primer proxy (Traefik) para determinar si la conexión es segura
 app.set('trust proxy', 1);
+
+// Aplicar Rate Limiter Global ANTES de las sesiones/rutas principales
+// Asegurarse que se aplique después de 'trust proxy' si es necesario para identificar IPs correctamente
+// Y después de middlewares básicos como cors y express.json
+app.use('/api', globalLimiter); 
+app.use('/auth', globalLimiter); // Aplicar también a /auth
+app.use('/admin', globalLimiter); // Aplicar también a /admin
 
 // Configurar sesiones
 app.use(
