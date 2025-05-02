@@ -9,6 +9,20 @@ body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
+  /* Aplicar gradiente oscuro como fondo */
+  background: linear-gradient(to bottom, #0a0011, #0f000f, #000000);
+  /* Asegurar que cubra toda la altura y esté fijo (aunque attachment no es tan relevante para gradientes) */
+  min-height: 100vh;
+  background-attachment: fixed; /* Mantiene el gradiente fijo al hacer scroll */
+  /* Quitar color de fondo plano anterior */
+  /* background-color: #060919; */ 
+}
+
+/* Asegurar que el contenedor raíz también permita ver el fondo del body */
+#root {
+  min-height: 100vh; /* Ocupar al menos toda la altura */
+  /* Puedes necesitar añadir aislamiento si tienes elementos posicionados absolutamente */
+  /* isolation: isolate; */
 }
 
 /* Clase para ocultar scrollbar en todos los navegadores */
