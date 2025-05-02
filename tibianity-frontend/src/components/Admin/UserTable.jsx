@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
+import { EllipsisVerticalIcon, ArrowUpCircleIcon, ArrowDownCircleIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/20/solid';
 
 // Componente para mostrar la tabla de usuarios registrados
 const UserTable = ({ 
@@ -8,15 +9,36 @@ const UserTable = ({
   currentUser, 
   handlePromote, 
   handleDemote, 
+  handleGrantAccess,
+  handleRevokeAccess,
   actionLoading, 
   actionError, 
   actionSuccess 
 }) => {
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const dropdownRef = useRef(null);
 
   // Función auxiliar para obtener sesiones de un usuario específico
   const getUserSessionsCount = (userId) => {
     if (!Array.isArray(sessions)) return 0;
     return sessions.filter(session => session.userId === userId).length;
+  };
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  const toggleDropdown = (userId) => {
+    setOpenDropdownId(openDropdownId === userId ? null : userId);
   };
 
   return (
@@ -44,7 +66,10 @@ const UserTable = ({
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha Registro</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Sesiones</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rol</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acceso</th>
+              <th scope="col" className="relative px-6 py-3">
+                <span className="sr-only">Acciones</span>
+              </th>
             </tr>
           </thead>
           <tbody className="bg-[#111118] divide-y divide-[#2e2e3a]">
@@ -52,6 +77,7 @@ const UserTable = ({
             {Array.isArray(users) && users.map(listedUser => {
               const isCurrentUser = currentUser?.id === listedUser._id; // Asumiendo que currentUser.id existe
               const isListedUserAdmin = listedUser.isAdmin === true;
+              const hasPublicAccess = listedUser.canAccessPublicSite === true;
               const userSessionsCount = getUserSessionsCount(listedUser._id);
 
               return (
@@ -79,23 +105,68 @@ const UserTable = ({
                       {isListedUserAdmin ? 'Admin' : 'Usuario'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {isListedUserAdmin ? (
-                      <button
-                        onClick={() => handleDemote(listedUser._id)} // Usar prop
-                        disabled={isCurrentUser || actionLoading === listedUser._id}
-                        className={`text-red-500 hover:text-red-400 disabled:text-gray-500 disabled:cursor-not-allowed ${actionLoading === listedUser._id ? 'opacity-50 animate-pulse' : ''}`}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ 
+                      hasPublicAccess ? 'bg-sky-900/60 text-sky-300' : 'bg-slate-700/50 text-slate-400'
+                    }`}> 
+                      {hasPublicAccess ? 'Permitido' : 'Denegado'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                    <button
+                      onClick={() => toggleDropdown(listedUser._id)}
+                      disabled={actionLoading === listedUser._id}
+                      className={`p-1 text-gray-400 hover:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 ${actionLoading === listedUser._id ? 'opacity-50 cursor-wait' : ''}`}
+                    >
+                      <EllipsisVerticalIcon className="h-5 w-5" aria-hidden="true" />
+                      <span className="sr-only">Acciones para {listedUser.name}</span>
+                    </button>
+
+                    {openDropdownId === listedUser._id && (
+                      <div 
+                        ref={dropdownRef}
+                        className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                        role="menu" aria-orientation="vertical" aria-labelledby={`menu-button-${listedUser._id}`}
                       >
-                        {actionLoading === listedUser._id ? 'Degradando...' : (isCurrentUser ? '-' : 'Degradar')}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handlePromote(listedUser._id)} // Usar prop
-                        disabled={actionLoading === listedUser._id}
-                        className={`text-indigo-400 hover:text-indigo-300 disabled:text-gray-500 disabled:cursor-not-allowed ${actionLoading === listedUser._id ? 'opacity-50 animate-pulse' : ''}`}
-                      >
-                        {actionLoading === listedUser._id ? 'Promoviendo...' : 'Promover'}
-                      </button>
+                        {isListedUserAdmin ? (
+                          <button
+                            onClick={() => { handleDemote(listedUser._id); setOpenDropdownId(null); }}
+                            disabled={isCurrentUser || actionLoading === listedUser._id}
+                            className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            role="menuitem"
+                          >
+                            <ArrowDownCircleIcon className="h-4 w-4"/> Degradar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => { handlePromote(listedUser._id); setOpenDropdownId(null); }}
+                            disabled={actionLoading === listedUser._id}
+                            className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-indigo-400 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            role="menuitem"
+                          >
+                            <ArrowUpCircleIcon className="h-4 w-4"/> Promover
+                          </button>
+                        )}
+                        {hasPublicAccess ? (
+                          <button
+                            onClick={() => { handleRevokeAccess(listedUser._id); setOpenDropdownId(null); }}
+                            disabled={actionLoading === listedUser._id}
+                            className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-yellow-500 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            role="menuitem"
+                          >
+                            <XCircleIcon className="h-4 w-4"/> Denegar Acceso
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => { handleGrantAccess(listedUser._id); setOpenDropdownId(null); }}
+                            disabled={actionLoading === listedUser._id}
+                            className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-sky-400 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            role="menuitem"
+                          >
+                            <CheckCircleIcon className="h-4 w-4"/> Permitir Acceso
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

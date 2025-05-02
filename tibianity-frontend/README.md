@@ -40,10 +40,10 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 
 - **Framework**: React.js 18
 - **Enrutamiento**: React Router DOM v6+ (v7 implícita)
-- **Estilos**: Tailwind CSS 3
-- **Peticiones HTTP**: Axios (o `fetch` nativo)
-- **Autenticación**: Google OAuth (integrado con backend)
-- **Fuentes**: Inter (Google Fonts)
+- **Estilos**: Tailwind CSS 3 ([`tailwind.config.js`](mdc:tibianity-frontend/tailwind.config.js))
+- **Peticiones HTTP**: Axios
+- **Autenticación**: Google OAuth (integrado con backend vía [`AuthContext.jsx`](mdc:tibianity-frontend/src/context/AuthContext.jsx))
+- **Fuentes**: Orbitron (para títulos/logo), Inter (resto) - [Ver Regla Tipografía](mdc:.cursor/rules/typography.mdc)
 - **Metadatos**: Open Graph para compartir en redes sociales
 - **Procesamiento CSS**: PostCSS con autoprefixer
 - **Iconos**: Heroicons (`@heroicons/react`)
@@ -142,15 +142,15 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │
   ├── /src                  # Código fuente de la aplicación
   │   ├── /components       # Componentes reutilizables
-  │   │   ├── /common       # Componentes genéricos y reutilizables (SocialIcon, LoginGoogleButton)
+  │   │   ├── /common       # Componentes genéricos (SocialIcon, LoginGoogleButton, GradientButton, AnimatedBackgroundLines)
   │   │   ├── /LandingPage  # Componentes específicos de la Landing Page (Hero, Lore, Services, Team)
-  │   │   ├── /Admin        # Componentes específicos del panel admin (SidePanelMenu, EmailSubscribers)
-  │   │   ├── /ComingSoon   # Componentes específicos de la página ComingSoon
-  │   │   ├── Navbar.jsx    # Barra de navegación principal (Usada en User/Guest layouts)
+  │   │   ├── /Admin        # Componentes específicos del panel admin (SidePanelMenu, UserTable, SessionChart, MetricCard, FilterControls)
+  │   │   ├── /ComingSoon   # Componentes específicos de la página ComingSoon (SubscriptionForm)
+  │   │   ├── Navbar.jsx    # Barra de navegación principal (Usada en todos los layouts, integra toggle de admin)
   │   │   └── Footer.jsx    # Pie de página global
   │   │
   │   ├── /layouts          # Componentes de Layout (estructura de página)
-  │   │   ├── AdminLayout.jsx   # Layout para Admin (con SidePanelMenu toggleable)
+  │   │   ├── AdminLayout.jsx   # Layout para Admin (con Navbar, Footer, SidePanelMenu responsive)
   │   │   ├── UserLayout.jsx    # Layout para Usuarios normales
   │   │   ├── GuestLayout.jsx   # Layout para Invitados
   │   │   └── PublicLayout.jsx  # Layout base para páginas públicas (futuro)
@@ -158,6 +158,7 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │   ├── /pages            # Páginas principales y vistas (contenedores de ruta)
   │   │   ├── LandingPage.jsx       # Página principal real (Hero, Services, etc.)
   │   │   ├── ComingSoonPage.jsx    # Página mostrada durante construcción/acceso restringido
+  │   │   ├── EventsPage.jsx        # Página de eventos (accesible por Admin)
   │   │   ├── UserProfilePage.jsx   # Página de perfil de usuario
   │   │   ├── News.jsx              # Página de noticias
   │   │   ├── Market.jsx            # Página del mercado virtual
@@ -167,18 +168,18 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │   │   └── /Admin                # Páginas del panel de admin (AdminDashboard, EmailSenderPage)
   │   │
   │   ├── /context          # Contextos de React (estado global)
-  │   │   └── AuthContext.jsx # Contexto para la autenticación
+  │   │   └── AuthContext.jsx # Contexto para la autenticación (devuelve user con isAdmin y canAccessPublicSite)
   │   │
-  │   ├── /styles           # Estilos CSS adicionales (index.css)
+  │   ├── /styles           # Estilos CSS globales (index.css)
   │   ├── /config           # Archivos de configuración (constants.js)
   │   ├── /api              # Lógica de llamadas a API (chat.js)
   │   ├── /utils            # Funciones de utilidad
-  │   ├── App.jsx           # Componente principal y lógica de enrutamiento
+  │   ├── App.jsx           # Componente principal y lógica de enrutamiento por roles/acceso
   │   ├── index.js          # Punto de entrada de la aplicación
-  │   └── index.css         # Estilos globales importados
+  │   └── index.css         # Estilos globales (incluye animaciones, fuentes, grid background)
   │
   ├── package.json          # Dependencias y scripts
-  ├── tailwind.config.js    # Configuración de Tailwind CSS
+  ├── tailwind.config.js    # Configuración de Tailwind CSS (incluye fuente Orbitron)
   ├── postcss.config.js     # Configuración de PostCSS
   └── README.md             # Documentación
 ```
@@ -187,19 +188,20 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 
 ### App.jsx
 - Componente raíz que renderiza el `AuthProvider` y el `Router`.
-- Contiene `AppContent` que implementa la lógica principal de enrutamiento usando `<Routes>` y `<Route>`.
-- **Determina qué Layout (`AdminLayout`, `UserLayout`, `GuestLayout`) y qué página mostrar** en la ruta raíz (`/`) y otras rutas, basándose en el estado de autenticación y el rol (`isAdmin`) del `AuthContext`.
+- Contiene `AppContent` que implementa la lógica principal de enrutamiento usando `<Routes>` y `<Route>`. 
+- **Determina qué Layout (`AdminLayout`, `UserLayout`, `GuestLayout`) y qué página mostrar** basándose en el estado de autenticación, el rol (`isAdmin`) y el acceso (`canAccessPublicSite`) del `AuthContext`.
 - Define las rutas anidadas específicas para cada rol/layout.
 
 ### Layouts (`src/layouts/`)
-- **AdminLayout.jsx**: Define la estructura para las secciones de administración. Incluye un `SidePanelMenu.jsx` (que se puede ocultar/mostrar) y un área de contenido principal (`<Outlet />`).
-- **UserLayout.jsx**: Estructura para usuarios normales autenticados. Incluye `Navbar.jsx`, `Footer.jsx` y un `<Outlet />`.
-- **GuestLayout.jsx**: Estructura para usuarios no autenticados (invitados). Incluye `Navbar.jsx`, `Footer.jsx` y un `<Outlet />`.
-- **PublicLayout.jsx**: Layout genérico con `Navbar.jsx` y `Footer.jsx`, pensado para futuras páginas públicas.
+- **AdminLayout.jsx**: Define la estructura para las secciones de administración. Incluye `Navbar`, `Footer`, un `SidePanelMenu.jsx` (responsive: fijo en desktop, overlay en móvil) y un área de contenido (`<Outlet />`).
+- **UserLayout.jsx**: Estructura para usuarios normales autenticados. Incluye `Navbar`, `Footer` y un `<Outlet />`.
+- **GuestLayout.jsx**: Estructura para usuarios no autenticados (invitados). Incluye `Navbar`, `Footer` y un `<Outlet />`.
+- **PublicLayout.jsx**: Layout genérico con `Navbar` y `Footer`, pensado para futuras páginas públicas.
 
 ### Navbar.jsx
-- Barra de navegación superior responsive, utilizada por `UserLayout` y `GuestLayout`.
-- Muestra el logo, enlaces principales (`/news`, `/market`, etc.) y botones de Login/Register.
+- Barra de navegación superior responsive, utilizada por todos los layouts.
+- Muestra el logo (fuente Orbitron), enlaces principales y botones de Login/Register.
+- **Integra el botón para mostrar/ocultar el `SidePanelMenu`** cuando se usa dentro del `AdminLayout`.
 - Usa `[LoginGoogleButton.jsx](mdc:tibianity-frontend/src/components/common/LoginGoogleButton.jsx)`.
 
 ### Footer.jsx
@@ -207,13 +209,14 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 - Usa el componente reutilizable `[SocialIcon.jsx](mdc:tibianity-frontend/src/components/common/SocialIcon.jsx)`.
 
 ### LandingPage.jsx (`src/pages/`)
-- Página principal del sitio que ensambla las secciones de contenido (`Hero`, `Services`, `Lore`, `Team`).
-- **Actualmente visible solo por administradores** en la ruta raíz (`/`).
+- Página principal del sitio que ensambla las secciones de contenido.
+- **Visible por administradores y usuarios con acceso público (`canAccessPublicSite`)** en la ruta raíz (`/`).
 
 ### ComingSoonPage.jsx (`src/pages/`)
-- Página que se muestra a **usuarios normales** en la ruta raíz (`/`) y en cualquier ruta a la que no tengan acceso permitido.
+- Página que se muestra a **usuarios normales sin acceso público** en la ruta raíz (`/`) y en rutas no permitidas.
 - También se muestra a **invitados** en todas las rutas.
-- Contiene el formulario de suscripción y lógica de login/logout. Usa `[ComingSoon.jsx](mdc:tibianity-frontend/src/components/ComingSoon/ComingSoon.jsx)` para la UI.
+- Contiene el formulario de suscripción. 
+- Usa `[ComingSoon.jsx](mdc:tibianity-frontend/src/components/ComingSoon/ComingSoon.jsx)` para la UI, la cual ahora incluye un **fondo animado con líneas y cuadrícula**.
 
 ### Componentes Comunes (`src/components/common/`)
 - **SocialIcon.jsx**: Icono de red social reutilizable.
@@ -221,41 +224,39 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 
 ### Admin Components (`src/components/Admin/`)
 - **SidePanelMenu.jsx**: Menú lateral usado en `AdminLayout`.
-- Otros componentes específicos del panel (gráficos, tablas, formularios).
+- **UserTable.jsx**: Muestra la tabla de usuarios con columnas para Rol y **Acceso Público**. Las acciones (Promover/Degradar, Permitir/Denegar Acceso) están ahora en un **menú desplegable** por usuario.
+- Otros componentes del panel: `SessionChart`, `MetricCard`, `FilterControls`, etc.
 
 ## 📄 Sistema de Páginas y Rutas (Lógica en `App.jsx`)
 
-La aplicación implementa un sistema de enrutamiento basado en roles durante la fase de desarrollo actual:
+La aplicación implementa un sistema de enrutamiento basado en roles y acceso:
 
 - **Administrador (Logueado, `isAdmin=true`):**
   - Ve la `LandingPage` real en `/`.
-  - Accede a todas las páginas públicas (`/news`, `/market`, etc.).
+  - Accede a todas las páginas públicas (`/news`, `/market`, `/lore`, `/team`, `/events`, `/chat`).
   - Accede a su perfil (`/profile`).
-  - Accede al panel de administración en `/admin` (redirige a `/admin/dashboard`) y sus sub-rutas (`/admin/email`, etc.).
-  - Rutas no definidas muestran `NotFound` (dentro del `AdminLayout`).
+  - Accede al panel de administración en `/admin`.
+  - Rutas no definidas muestran `NotFound`.
 - **Usuario Normal (Logueado, `isAdmin=false`):**
-  - Ve `ComingSoonPage` en `/`.
-  - **Solo** puede acceder a su perfil en `/profile`.
-  - Cualquier otra ruta lo redirige a `/` (mostrando `ComingSoonPage`).
+  - **Si `canAccessPublicSite=true`:** Ve la `LandingPage` en `/` y puede acceder a todas las páginas públicas y a su perfil.
+  - **Si `canAccessPublicSite=false`:** Ve `ComingSoonPage` en `/`, solo puede acceder a `/profile`, y es redirigido a `/` para otras rutas.
 - **Invitado (No logueado):**
-  - Ve `ComingSoonPage` en `/` y en cualquier otra ruta.
+  - Ve `ComingSoonPage` en `/` y en cualquier otra ruta (excepto las legales).
 
 ## 🔑 Autenticación
 
-El sistema de autenticación utiliza Google OAuth a través del backend:
-
-- Implementado a través de AuthContext.jsx
-- Integración con la API de backend (/auth/google)
-- Persistencia de sesión mediante cookies
-- Manejo de estado de autenticación (isAuthenticated, user)
-- Componentes UI que responden al estado de autenticación
+- Implementado a través de [`AuthContext.jsx`](mdc:tibianity-frontend/src/context/AuthContext.jsx).
+- Integración con la API de backend (`/auth/google`, `/auth/profile`, `/auth/logout`).
+- El contexto ahora provee `user.canAccessPublicSite` además de `isAdmin`.
+- **Flujo de Redirección (`AuthCallbackHandler.jsx`):** Después del login, redirige a `/admin` (si admin), a `/` (si usuario normal con acceso público) o a `/profile` (si usuario normal sin acceso público).
 
 ## 👑 Funcionalidades del Administrador
 
-El panel de administración (`/admin` y sub-rutas) ofrece funcionalidades exclusivas para usuarios marcados como administradores:
-- **Dashboard Principal (`/admin`)**: Visualización de métricas (total usuarios, sesiones), filtros por fecha y usuario, gráficos de sesiones y tabla de usuarios registrados.
-- **Gestión de Roles**: Posibilidad de promover usuarios a administradores o degradar administradores existentes (excepto a sí mismo).
-- **Envío de Correos (`/admin/email`)**: Interfaz para redactar y enviar correos masivos a todos los usuarios suscritos a través del formulario en `ComingSoon`. La funcionalidad de envío real depende de la configuración del backend con Resend.
+El panel de administración (`/admin` y sub-rutas) ofrece:
+- **Dashboard Principal (`/admin/dashboard`)**: Visualización de métricas, filtros, gráficos y tabla de usuarios.
+- **Gestión de Roles**: Promover/Degradar administradores.
+- **Gestión de Acceso Público**: Permitir/Denegar a usuarios normales el acceso a las páginas públicas.
+- **Envío de Correos (`/admin/email`)**: Interfaz para enviar correos a suscriptores.
 
 ## 🔌 Integración con Backend
 
@@ -265,7 +266,8 @@ El frontend se comunica con el backend para:
 - **Registrar suscripciones** de correo (`POST /api/subscribe`)
 - **Obtener datos administrativos** (usuarios, sesiones) (`GET /admin/users`, `GET /admin/sessions`)
 - **Gestionar roles** de administrador (`PATCH /admin/users/:id/promote`, `PATCH /admin/users/:id/demote`)
-- **Iniciar el envío de correos** a suscriptores (`POST /api/admin/send-newsletter`)
+- **Gestionar acceso público** (`PATCH /admin/users/:id/grant-access`, `PATCH /admin/users/:id/revoke-access`)
+- **Iniciar el envío de correos** a suscriptores (`POST /admin/send-newsletter`)
 - Obtención de noticias oficiales cuando no están disponibles localmente
 - Otras funcionalidades de API que puedan ser necesarias
 
@@ -349,20 +351,25 @@ Este módulo maneja la comunicación con un servicio externo (probablemente un L
 - Gradientes en botones y bordes
 - Sombras personalizadas para elementos UI
 - Animaciones en interacciones (hover, focus)
+- **Fondo animado con líneas y efecto de luz** en `ComingSoonPage`.
+- **Fondo con cuadrícula sutil** en `ComingSoonPage`.
+- **Tipografía Orbitron** para títulos y logo.
 - Totalmente responsive para todas las pantallas
 
 ## 🚧 Estado y Próximos Pasos
 
 ### Estado Actual
-- [x] Sistema de rutas refactorizado y basado en roles (Admin, User, Guest).
-- [x] Lógica de acceso a páginas restringida según el rol durante desarrollo.
+- [x] Sistema de rutas refactorizado y basado en roles/acceso.
+- [x] Lógica de acceso a páginas restringida según el rol/acceso.
 - [x] Diseño visual y componentes principales creados.
-- [x] Integración con backend para autenticación y noticias.
+- [x] Integración con backend para autenticación, noticias, gestión de usuarios.
 - [x] Funcionalidad de suscripción por correo implementada.
-- [x] Panel de administración básico con visualización de datos y gestión de roles.
+- [x] Panel de administración con visualización de datos, gestión de roles y **gestión de acceso público**.
 - [x] Funcionalidad de envío de correos a suscriptores implementada.
-- [x] Estructura de componentes refactorizada (`common`, `LandingPage`).
-- [x] UI de AdminLayout y Navbar ajustada (sidebar toggle, logo, hover botones).
+- [x] Estructura de componentes refactorizada (`common`, `LandingPage`, `Admin`).
+- [x] UI de AdminLayout y Navbar ajustada (sidebar responsive, toggle integrado, footer, etc).
+- [x] Mejoras visuales (tipografía Orbitron, fondo animado y grid en ComingSoon).
+- [x] Añadida página de Eventos (accesible por Admin).
 
 ### Próximos Desarrollos
 - Implementación completa del mercado virtual

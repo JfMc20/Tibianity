@@ -24,7 +24,7 @@ const UserProfilePage = () => {
 
   // Si está autenticado, mostrar perfil
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#060919] text-white p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen text-white p-4">
       <div className="bg-[#1a1d2e] p-8 rounded-lg shadow-xl max-w-md w-full text-center">
         <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Tu Perfil</h1>
         {user ? (

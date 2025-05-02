@@ -1,0 +1,17 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Guía de Tipografía
+
+Este proyecto utiliza fuentes específicas para mantener una estética consistente, especialmente con un toque tecnológico/de videojuego.
+
+## Fuentes Principales
+
+*   **Orbitron**: Es la fuente destacada utilizada para elementos clave como títulos principales y el logo de la marca "Tibianity". Se importa desde Google Fonts y se configura en Tailwind.
+    *   Importación: Ver [`src/index.css`](mdc:src/index.css)
+    *   Configuración Tailwind: Ver [`tailwind.config.js`](mdc:tailwind.config.js)
+    *   Ejemplo de uso (Título): [`src/components/ComingSoon/ComingSoon.jsx`](mdc:src/components/ComingSoon/ComingSoon.jsx)
+    *   Ejemplo de uso (Logo): [`src/components/Navbar.jsx`](mdc:src/components/Navbar.jsx)
+*   **Fuente Sans Serif por Defecto**: (Actualmente Inter, según `tailwind.config.js`) se utiliza para el cuerpo del texto y otros elementos de la interfaz para asegurar la legibilidad.

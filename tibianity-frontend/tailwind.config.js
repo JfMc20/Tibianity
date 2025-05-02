@@ -5,6 +5,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        orbitron: ['Orbitron', 'sans-serif'],
+      },
       colors: {
         neon: {
           magenta: '#e100ff',

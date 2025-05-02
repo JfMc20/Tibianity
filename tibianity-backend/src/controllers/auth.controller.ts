@@ -17,8 +17,8 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'No se pudo obtener el ID de usuario del perfil de sesión.' });
     }
 
-    // Buscar el usuario completo en la base de datos para obtener su estado de isAdmin
-    const dbUser = await User.findOne({ googleId }).select('+isAdmin');
+    // Buscar el usuario completo en la base de datos para obtener isAdmin y canAccessPublicSite
+    const dbUser = await User.findOne({ googleId }).select('+isAdmin +canAccessPublicSite');
 
     if (!dbUser) {
       // Esto no debería pasar si el usuario está autenticado y pasó por el callback de Passport,
@@ -26,14 +26,16 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Usuario autenticado pero no encontrado en la base de datos.' });
     }
 
-    // Usar el valor directamente de la base de datos
+    // Usar los valores directamente de la base de datos
     const isAdmin = dbUser.isAdmin === true;
+    const canAccessPublicSite = dbUser.canAccessPublicSite === true;
 
-    // Retornar los datos del perfil de sesión (req.user) junto con el estado isAdmin real de la DB
+    // Retornar los datos del perfil de sesión (req.user) junto con los campos reales de la DB
     res.json({
       user: {
         ...userProfile,
-        isAdmin: isAdmin
+        isAdmin: isAdmin,
+        canAccessPublicSite: canAccessPublicSite
       }
     });
 

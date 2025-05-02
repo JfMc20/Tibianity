@@ -17,12 +17,15 @@ const AuthCallbackHandler = () => {
     // Este efecto se ejecuta cuando cambian loading, isAuthenticated o user
     if (!loading) {
       if (isAuthenticated && user) {
-        // Redirección inteligente basada en el rol
+        // Redirección inteligente basada en el rol y acceso
         if (user.isAdmin) {
           console.log('[AuthCallback] Usuario es admin, redirigiendo a /admin...');
           navigate('/admin', { replace: true });
+        } else if (user.canAccessPublicSite) {
+          console.log('[AuthCallback] Usuario normal CON ACCESO, redirigiendo a /...');
+          navigate('/', { replace: true });
         } else {
-          console.log('[AuthCallback] Usuario normal, redirigiendo a /profile...');
+          console.log('[AuthCallback] Usuario normal SIN ACCESO, redirigiendo a /profile...');
           navigate('/profile', { replace: true });
         }
       } else {

@@ -9,6 +9,7 @@ export interface IUser extends Document {
   email: string;
   photo: string;
   isAdmin: boolean;
+  canAccessPublicSite?: boolean;
   createdAt: Date;
 }
 
@@ -33,6 +34,10 @@ const UserSchema: Schema = new Schema({
     type: String
   },
   isAdmin: {
+    type: Boolean,
+    default: false
+  },
+  canAccessPublicSite: {
     type: Boolean,
     default: false
   },

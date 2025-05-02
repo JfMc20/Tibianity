@@ -50,7 +50,11 @@ const AdminDashboard = () => {
         }
       });
       const [usersResponse, sessionsResponse] = await Promise.all([usersPromise, sessionsPromise]);
-      setUsers(usersResponse.data.map(u => ({ ...u, isAdmin: u.isAdmin || false })));
+      setUsers(usersResponse.data.map(u => ({ 
+        ...u, 
+        isAdmin: u.isAdmin || false, 
+        canAccessPublicSite: u.canAccessPublicSite || false
+      })));
       setSessions(sessionsResponse.data);
     } catch (err) { 
       if (!axios.isCancel(err)) {
@@ -137,6 +141,33 @@ const AdminDashboard = () => {
   const handleEndDateChange = (date) => { if (date) { setEndDate(date); } };
   const handleUserChange = (event) => { setSelectedUser(event.target.value); };
 
+  // --- NUEVOS HANDLERS ---
+  const handleGrantAccess = useCallback(async (userIdToGrant) => {
+    if (!userIdToGrant || !window.confirm('Permitir acceso público a este usuario?')) return;
+    setActionLoading(userIdToGrant); setActionError(null); setActionSuccess(null);
+    try {
+      const response = await apiClient.patch(`${ADMIN_API.USERS}/${userIdToGrant}/grant-access`);
+      if (!response.data?.success) throw new Error(response.data?.message || 'Error');
+      setUsers(prev => prev.map(u => u._id === userIdToGrant ? { ...u, canAccessPublicSite: true } : u));
+      setActionSuccess(`Acceso público permitido para ${response.data.user?.name || ''}.`);
+    } catch (err) {
+      setActionError(`Error al permitir acceso: ${err.response?.data?.message || err.message}`);
+    } finally { setActionLoading(null); }
+  }, []);
+
+  const handleRevokeAccess = useCallback(async (userIdToRevoke) => {
+    if (!userIdToRevoke || !window.confirm('Denegar acceso público a este usuario?')) return;
+    setActionLoading(userIdToRevoke); setActionError(null); setActionSuccess(null);
+    try {
+      const response = await apiClient.patch(`${ADMIN_API.USERS}/${userIdToRevoke}/revoke-access`);
+      if (!response.data?.success) throw new Error(response.data?.message || 'Error');
+      setUsers(prev => prev.map(u => u._id === userIdToRevoke ? { ...u, canAccessPublicSite: false } : u));
+      setActionSuccess(`Acceso público denegado para ${response.data.user?.name || ''}.`);
+    } catch (err) {
+      setActionError(`Error al denegar acceso: ${err.response?.data?.message || err.message}`);
+    } finally { setActionLoading(null); }
+  }, []);
+
   // --- Redirección --- 
   useEffect(() => {
     if (!authLoading && !isAdmin && isAuthenticated) {
@@ -188,6 +219,8 @@ const AdminDashboard = () => {
           currentUser={currentUser}
           handlePromote={handlePromoteUser} 
           handleDemote={handleDemoteUser}   
+          handleGrantAccess={handleGrantAccess}
+          handleRevokeAccess={handleRevokeAccess}
           actionLoading={actionLoading}
           actionError={actionError}
           actionSuccess={actionSuccess}

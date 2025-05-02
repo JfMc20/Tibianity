@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import LoginGoogleButton from './common/LoginGoogleButton';
 
 /**
@@ -52,7 +52,7 @@ export const Logo = () => {
       */}
       {/* Text "Tibianity" - Always visible, now the main logo element */}
       <span
-        className="text-xl font-bold text-white whitespace-nowrap transition-colors duration-300 
+        className="font-orbitron text-xl font-bold text-white whitespace-nowrap transition-colors duration-300 
                    group-hover:bg-gradient-to-r group-hover:from-[#60c8ff] group-hover:to-[#bd4fff] group-hover:bg-clip-text group-hover:text-transparent"
         style={{
           filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))'
@@ -162,38 +162,58 @@ const ProjectButton = () => {
 
 /**
  * Navbar Component - Refactorizado
+ * Acepta props opcionales para integrar el toggle del Admin Panel.
+ * @param {Object} props
+ * @param {() => void} [props.togglePanel] - Función para abrir/cerrar panel admin.
+ * @param {boolean} [props.isPanelOpen] - Estado actual del panel admin.
+ * @param {boolean} [props.isAdminLayout] - Indica si está en el layout de admin (para mostrar toggle).
  */
-const Navbar = () => {
-  // Estado para menú móvil
+const Navbar = ({ togglePanel, isPanelOpen, isAdminLayout = false }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Links de navegación
   const navLinks = [
     { id: 'news', to: '/news', label: 'News' },
     { id: 'market', to: '/market', label: 'Market' },
     { id: 'lore', to: '/lore', label: 'Lore' },
-    { id: 'team', to: '/team', label: 'Team' }
+    { id: 'team', to: '/team', label: 'Team' },
+    { id: 'events', to: '/events', label: 'Events' }
   ];
   
-  // Función para activar/desactivar menú móvil
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  // Función para cerrar menú móvil al hacer clic en un enlace
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
+
+  // Función combinada para el botón del panel admin en menú móvil
+  const handleAdminPanelToggleFromMobile = () => {
+    if (togglePanel) {
+      togglePanel(); // Llama a la función del layout
+    }
+    closeMobileMenu(); // Cierra el menú móvil de la navbar
+  };
   
   return (
-    // Cabecera con estilos base
     <header className="bg-[#111118] border-b border-[#2e2e3a] shadow-sm sticky top-0 z-40" 
             style={{boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(189, 79, 255, 0.1)'}}>
       <div className="w-full max-w-7xl mx-auto">
         <div className="flex justify-between items-center h-20 px-3">
           
-          {/* Izquierda: Logo */} 
-          <div className="flex-shrink-0">
+          {/* Izquierda: Toggle Admin (Desktop) + Logo */}
+          <div className="flex items-center gap-x-3">
+            {/* Botón Toggle Admin Panel - Oculto por defecto, visible en lg+ */}
+            {isAdminLayout && (
+              <button 
+                onClick={togglePanel}
+                // Añadir hidden lg:inline-flex
+                className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white hidden lg:inline-flex"
+                aria-label={isPanelOpen ? "Cerrar panel lateral" : "Abrir panel lateral"}
+              >
+                 {isPanelOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />} 
+              </button>
+            )}
             <Logo />
           </div>
           
@@ -223,7 +243,7 @@ const Navbar = () => {
             <ProjectButton />
           </div>
 
-          {/* Botón Menú Móvil (Solo visible en pantallas pequeñas) */} 
+          {/* Botón Menú Móvil (Hamburguesa Navbar - Siempre visible en móvil) */}
           <div className="md:hidden flex items-center"> 
             <button
               onClick={toggleMobileMenu}
@@ -244,18 +264,18 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Panel Menú Móvil */} 
-      {/* Usar clases de transición para animación suave */} 
+      {/* Panel Menú Móvil (Navbar) */}
       <div 
         className={`md:hidden absolute top-full left-0 w-full bg-[#111118] border-b border-[#2e2e3a] shadow-lg transition-all duration-300 ease-in-out transform ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0 pointer-events-none'}`}
         id="mobile-menu"
       >
+        {/* Links de Navegación Móvil */}
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
           {navLinks.map((link) => (
             <RouterNavLink
               key={link.id}
               to={link.to}
-              onClick={closeMobileMenu} // Cerrar menú al hacer clic
+              onClick={closeMobileMenu} 
               className={({ isActive }) => 
                 `block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 
                 ${isActive 
@@ -267,13 +287,30 @@ const Navbar = () => {
               {link.label}
             </RouterNavLink>
           ))}
+          {/* Opción para abrir/cerrar Admin Panel (Solo si isAdminLayout) */}
+          {isAdminLayout && (
+            <button
+              onClick={handleAdminPanelToggleFromMobile}
+              className="w-full text-left flex items-center gap-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors duration-200"
+            >
+              <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" /> {/* Icono ejemplo */} 
+              Admin Panel
+            </button>
+          )}
         </div>
          {/* Botones en menú móvil */}
-        <div className="pt-4 pb-3 border-t border-gray-700">
-          <div className="px-2 space-y-2">
-             {/* Reutilizar LoginButton y ProjectButton o crear versiones específicas para móvil si es necesario */} 
-            <div className="px-1"><LoginButton /></div>
-            <div className="px-1"><ProjectButton /></div>
+         {/* Modificar el contenedor: remover borde superior, añadir línea con gradiente */}
+        <div className="pt-4 border-gray-700"> {/* Remover border-t y pb-3 implícitamente al reestructurar */}
+          {/* Línea con gradiente del Footer */}
+          <div className="h-px w-full mb-4" style={{
+            background: 'linear-gradient(to right, #60c8ff, #bd4fff, #60c8ff)',
+            boxShadow: '0 0 8px rgba(96, 200, 255, 0.4), 0 0 12px rgba(189, 79, 255, 0.3)'
+          }}></div>
+           {/* Contenedor de botones con padding inferior */}
+          <div className="px-3 pb-3 flex items-center space-x-2"> 
+             {/* Reutilizar LoginButton y ProjectButton */}
+            <LoginButton />
+            <ProjectButton />
           </div>
         </div>
       </div>

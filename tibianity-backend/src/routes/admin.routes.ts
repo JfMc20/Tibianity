@@ -41,6 +41,28 @@ router.patch('/users/:userId/demote',
 );
 
 /**
+ * @route PATCH /admin/users/:userId/grant-access
+ * @desc Otorga acceso público al sitio a un usuario
+ * @access Privado (Solo administradores)
+ */
+router.patch('/users/:userId/grant-access',
+  isAuthenticated,
+  isAdmin,
+  adminController.grantPublicAccess
+);
+
+/**
+ * @route PATCH /admin/users/:userId/revoke-access
+ * @desc Revoca el acceso público al sitio a un usuario
+ * @access Privado (Solo administradores)
+ */
+router.patch('/users/:userId/revoke-access',
+  isAuthenticated,
+  isAdmin,
+  adminController.revokePublicAccess
+);
+
+/**
  * @route POST /admin/send-newsletter
  * @desc Envía un correo a todos los suscriptores
  * @access Privado (Solo administradores)

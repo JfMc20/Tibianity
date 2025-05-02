@@ -1,0 +1,42 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Guía de Base de Datos
+
+Este documento describe la configuración y estructura de la base de datos utilizada en el proyecto Tibianity.
+
+## Tecnología
+
+*   **Tipo:** MongoDB
+*   **ODM (Object Document Mapper):** Mongoose
+*   **Servicio Docker:** `mongo` (basado en la imagen `mongo:6` o similar)
+
+## Configuración
+
+*   La conexión a la base de datos se configura en [`tibianity-backend/src/config/db.ts`](mdc:tibianity-backend/src/config/db.ts).
+*   La URI de conexión utilizada en el entorno Docker (definida en [`docker-compose.yml`](mdc:docker-compose.yml)) es `mongodb://mongo:27017/tibianityDb`.
+*   El nombre principal de la base de datos es `tibianityDb`.
+
+## Estructura (Colecciones Principales)
+
+Las siguientes colecciones existen en la base de datos `tibianityDb`:
+
+*   **`users`**: Almacena la información de los usuarios registrados.
+    *   Definición del modelo: [`tibianity-backend/src/models/User.ts`](mdc:tibianity-backend/src/models/User.ts)
+*   **`subscribers`**: Almacena los correos electrónicos de los usuarios suscritos a la lista de correo.
+    *   Definición del modelo: [`tibianity-backend/src/models/Subscriber.ts`](mdc:tibianity-backend/src/models/Subscriber.ts)
+*   **`sessionlogs`**: Registra las sesiones de inicio de los usuarios.
+    *   Definición del modelo: [`tibianity-backend/src/models/SessionLog.ts`](mdc:tibianity-backend/src/models/SessionLog.ts)
+*   **`sessions`**: Utilizada probablemente por `express-session` u otro middleware para gestionar las sesiones activas.
+
+## Acceso a la Shell (Desarrollo con Docker)
+
+Para interactuar directamente con la base de datos usando la shell de MongoDB (`mongosh`) desde el entorno de desarrollo Docker, ejecuta el siguiente comando en la raíz del proyecto (`/root/tibianity`):
+
+```bash
+docker compose exec -T mongo mongosh --host localhost --port 27017 tibianityDb
+```
+
+Esto te conectará directamente a la base de datos `tibianityDb` dentro del contenedor `mongo`.

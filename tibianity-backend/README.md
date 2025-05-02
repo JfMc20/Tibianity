@@ -50,7 +50,8 @@ backend/
   - Uso de la URI especificada en variables de entorno
 
 - **User.ts**: Modelo de usuario para MongoDB
-  - Define el esquema con los campos requeridos (googleId, name, email, etc.)
+  - Define el esquema con los campos requeridos (googleId, name, email, isAdmin, etc.)
+  - Incluye campo `canAccessPublicSite` (Boolean) para controlar el acceso a la web pública.
   - Proporciona la interfaz TypeScript para mantener el tipado fuerte
 
 - **SessionLog.ts**: Modelo para registrar inicios de sesión
@@ -72,7 +73,7 @@ backend/
 - **auth.routes.ts**: Rutas para autenticación con Google OAuth
   - `/auth/google`: Inicio del flujo de autenticación
   - `/auth/google/callback`: Callback después de la autenticación
-  - `/auth/profile`: Obtener perfil del usuario
+  - `/auth/profile`: Obtener perfil del usuario (incluye `isAdmin` y `canAccessPublicSite`)
   - `/auth/logout`: Cerrar sesión
 
 - **news.routes.ts**: Rutas para obtener noticias de Tibia
@@ -80,10 +81,12 @@ backend/
   - `/api/news/:id`: Obtiene una noticia específica por ID
 
 - **admin.routes.ts**: Rutas administrativas protegidas
-  - `/admin/users`: Obtiene todos los usuarios registrados.
-  - `/admin/sessions`: Obtiene todos los logs de inicio de sesión.
+  - `/admin/users`: Obtiene todos los usuarios registrados (incluyendo `canAccessPublicSite`)
+  - `/admin/sessions`: Obtiene todos los logs de inicio de sesión (con filtros opcionales)
   - `/admin/users/:userId/promote`: Promueve un usuario a admin.
   - `/admin/users/:userId/demote`: Degrada un admin a usuario.
+  - `/admin/users/:userId/grant-access`: Permite el acceso público a un usuario.
+  - `/admin/users/:userId/revoke-access`: Revoca el acceso público a un usuario.
   - `/admin/send-newsletter`: Envía un correo a todos los suscriptores.
 
 - **subscribe.routes.ts**: Ruta pública para nuevas suscripciones
@@ -95,12 +98,13 @@ backend/
   - Manejo de errores y respuestas
 
 - **auth.controller.ts**: Gestiona las solicitudes de autenticación
-  - Funcionalidad para ver perfil y cerrar sesión
+  - Funcionalidad para ver perfil (incluyendo `isAdmin` y `canAccessPublicSite` reales de la DB) y cerrar sesión
   - Integración con Passport
 
 - **admin.controller.ts**: Gestiona las funciones administrativas
-  - Obtención de listado de usuarios y sesiones.
+  - Obtención de listado de usuarios (incluyendo `canAccessPublicSite`) y sesiones.
   - Gestión de roles (promover/degradar).
+  - Gestión de acceso público (permitir/revocar).
   - Lógica para iniciar el envío de correos a suscriptores (usa Resend).
 
 - **subscribe.controller.ts**: Gestiona el registro de nuevos suscriptores.
@@ -130,7 +134,7 @@ backend/
 - `OPENROUTER_API_KEY`: Clave API para el servicio de traducción
 - `OPENROUTER_BASE_URL`: URL base para OpenRouter API
 - `TRANSLATION_MODEL`: Modelo a utilizar para traducciones
-- `MONGO_URI`: URI de conexión a MongoDB Atlas
+- `MONGO_URI`: URI de conexión a MongoDB (ej: `mongodb://mongo:27017/tibianityDb` en Docker)
 - `RESEND_API_KEY`: Clave API para el servicio de envío de correos Resend.
 - `RESEND_FROM_EMAIL`: Dirección de correo (verificada en Resend) usada como remitente.
 
@@ -138,7 +142,7 @@ backend/
 - `TibiaNews`: Interfaz para las noticias de Tibia
 - `TranslatedTibiaNews`: Interfaz para noticias traducidas
 - `UserProfile`: Interfaz para perfiles de usuario
-- `IUser`: Interfaz para el modelo de usuario en MongoDB
+- `IUser`: Interfaz para el modelo de usuario en MongoDB (incluye `canAccessPublicSite?`)
 - `ISessionLog`: Interfaz para registros de sesiones en MongoDB
 - `ISubscriber`: Interfaz para el modelo de suscriptor en MongoDB.
 
@@ -221,7 +225,7 @@ Para sincronizar y traducir noticias (requiere configurar API keys en `.env`):
 npm run sync-news
 ```
 
-Por defecto el servidor se ejecutará en http://localhost:5000.
+Por defecto el servidor (cuando se ejecuta standalone) se ejecutará en http://localhost:5000.
 
 ## Endpoints API
 
@@ -232,12 +236,12 @@ Por defecto el servidor se ejecutará en http://localhost:5000.
 
 ### Autenticación
 - `GET /auth/google` - Inicia el flujo de autenticación con Google
-- `GET /auth/profile` - Obtiene el perfil del usuario autenticado
-- `GET /auth/logout` - Cierra la sesión del usuario
+- `GET /auth/profile` - Obtiene el perfil del usuario autenticado (con `isAdmin`, `canAccessPublicSite`)
+- `POST /auth/logout` - Cierra la sesión del usuario (Corregido a POST)
 
 ### Administración (protegidos)
-- `GET /admin/users` - Obtiene todos los usuarios registrados.
-- `GET /admin/sessions` - Obtiene todos los logs de sesiones.
+- `GET /admin/users` - Obtiene todos los usuarios registrados (incluyendo `canAccessPublicSite`)
+- `GET /admin/sessions` - Obtiene todos los logs de sesiones (con filtros opcionales)
 - `PATCH /admin/users/:userId/promote` - Promueve un usuario a admin.
 - `PATCH /admin/users/:userId/demote` - Degrada un admin a usuario.
 - `POST /admin/send-newsletter` - Inicia el envío de un correo a todos los suscriptores.

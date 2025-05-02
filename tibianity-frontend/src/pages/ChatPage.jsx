@@ -36,7 +36,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-var(--navbar-height,0px)-var(--footer-height,0px))] bg-[#0a0e23] text-white">
+    <div className="flex flex-col h-[calc(100vh-var(--navbar-height,0px)-var(--footer-height,0px))] text-white">
       <h1 className="text-2xl font-bold p-4 text-center bg-[#060919] shadow-md">Asistente Tibianity</h1>
       
       <div className="flex-grow overflow-y-auto p-4 md:p-6">

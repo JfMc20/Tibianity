@@ -62,4 +62,134 @@ body {
   .neon-active {
     @apply text-neon-magenta text-shadow-neon-magenta animate-neon-pulse;
   }
-} 
+}
+
+/* Estilos para las líneas animadas de fondo */
+.animated-line {
+  position: absolute;
+  top: 0;
+  height: 150%; 
+  width: 2px; /* Más gruesas */
+  background-color: rgba(100, 116, 139, 0.15); /* Subir un poco la opacidad de la línea base también */
+  z-index: 1; 
+  animation: moveLine 25s linear infinite alternate;
+  transform-origin: top center;
+  overflow: hidden; 
+  /* display: none; */ 
+}
+
+/* Pseudo-elemento para la luz en movimiento */
+.animated-line::after {
+  content: '';
+  position: absolute;
+  top: -50px; 
+  left: 0;
+  width: 100%;
+  height: 45px; /* Aún más alta */
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 1.0), /* Blanco totalmente opaco */
+    transparent
+  );
+  /* filter: blur(1px); */ /* Quitar el desenfoque para máxima nitidez */
+  animation: moveLight 4.5s ease-in-out infinite; /* Un poco más lenta la luz */
+  animation-delay: var(--light-delay, 0s); 
+}
+
+/* @media (min-width: 768px) { 
+  .animated-line {
+    display: block;
+  }
+} */
+
+/* Posicionamiento y rotación (Ajusta estos valores) */
+.line-1 {
+  left: 5%; /* Mantenemos el ajuste anterior */
+  transform: rotate(-35deg);
+  animation-duration: 20s;
+  --initial-rotate: -35deg;
+  --light-delay: 0s; /* Retraso para la animación de luz */
+}
+
+.line-2 {
+  left: 50%;
+  transform: translateX(-50%) rotate(0deg);
+  height: 120%;
+  top: -10%;
+  animation-duration: 30s;
+  --initial-rotate: 0deg;
+  --light-delay: 1.5s; /* Diferente retraso */
+}
+
+.line-3 {
+  right: 5%; /* Mantenemos el ajuste anterior */
+  transform: rotate(35deg);
+  animation-duration: 25s;
+  --initial-rotate: 35deg;
+  --light-delay: 0.8s; /* Diferente retraso */
+}
+
+/* Animación de movimiento de la línea base (la que ya teníamos) */
+@keyframes moveLine {
+  0% {
+    transform: translateY(-15px) rotate(var(--initial-rotate, 0deg));
+  }
+  100% {
+    transform: translateY(15px) rotate(var(--initial-rotate, 0deg));
+  }
+}
+
+/* NUEVA Animación para la luz blanca */
+@keyframes moveLight {
+  0% {
+    top: -50px; /* Empezar arriba, fuera de la vista */
+  }
+  100% {
+    top: 100%; /* Terminar abajo, justo fuera de la vista */
+  }
+}
+
+/* Estilos para el fondo de cuadrícula */
+.content-grid-background {
+  position: relative; /* Necesario para el pseudo-elemento */
+  /* Podríamos aplicar el grid directamente al background, pero usar un pseudo-elemento
+     da más control sobre el z-index si es necesario y separa la lógica. */
+}
+
+.content-grid-background::before {
+  content: '';
+  position: absolute;
+  inset: 0; /* Cubre todo el contenedor padre */
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(to right, rgba(180, 180, 180, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(180, 180, 180, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px; /* Tamaño de la cuadrícula */
+  z-index: 2; /* Coloca la cuadrícula sobre las líneas (z-index: 1) */
+  mask-image: radial-gradient(ellipse at center, white 50%, transparent 100%); /* Difuminado opcional en bordes */
+  -webkit-mask-image: radial-gradient(ellipse at center, white 50%, transparent 100%); /* Para compatibilidad */
+}
+
+/* Decoración opcional para el título */
+.title-decoration {
+  position: relative;
+  padding-bottom: 0.5rem; /* Espacio para la línea inferior */
+}
+
+/* Línea decorativa debajo */
+.title-decoration::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px; /* Ancho de la línea */
+  height: 2px; /* Grosor de la línea */
+  background: linear-gradient(to right, #60c8ff, #bd4fff); /* Mismo gradiente que el borde */
+  border-radius: 1px;
+}
+
+/* Podrías añadir más pseudo-elementos (::before) para decoraciones 
+   en la parte superior o a los lados si quisieras. */ 

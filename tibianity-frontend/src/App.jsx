@@ -22,10 +22,14 @@ import MarketPage from './pages/Market'; // Asumiendo que Market.jsx es la pági
 import LorePage from './pages/LorePage';
 import TeamPage from './pages/TeamPage';
 import ChatPage from './pages/ChatPage';
+import EventsPage from './pages/EventsPage'; // <-- Importar nueva página
+// Importar páginas legales
+import TermsOfService from './pages/legal/TermsOfService'; 
+import PrivacyPolicy from './pages/legal/PrivacyPolicy'; 
 
 // Componente de pantalla de carga simple
 const LoadingScreen = () => (
-  <div className="flex items-center justify-center min-h-screen bg-[#060919] text-white">
+  <div className="flex items-center justify-center min-h-screen text-white">
     Cargando aplicación...
   </div>
 );
@@ -49,6 +53,12 @@ const AppContent = () => {
       {/* Ruta pública de autenticación */} 
       <Route path="/auth/success" element={<AuthCallbackHandler />} />
 
+      {/* Rutas Legales Públicas - Usan GuestLayout por simplicidad */}
+      <Route element={<GuestLayout />}> {/* Envuelve en un layout para consistencia */}
+        <Route path="/terminos-de-servicio" element={<TermsOfService />} />
+        <Route path="/politica-de-privacidad" element={<PrivacyPolicy />} />
+      </Route>
+
       {/* Rutas Condicionales por Rol */}
       {isAuthenticated ? (
         isAdmin ? (
@@ -66,6 +76,7 @@ const AppContent = () => {
               <Route path="lore" element={<LorePage />} /> 
               <Route path="team" element={<TeamPage />} /> 
               <Route path="chat" element={<ChatPage />} /> 
+              <Route path="events" element={<EventsPage />} /> {/* <-- Nueva ruta */} 
             </Route>
 
             {/* Rutas específicas bajo /admin - También usan AdminLayout */}
@@ -86,14 +97,34 @@ const AppContent = () => {
           </>
         ) : (
           // --- USUARIO NORMAL --- 
-          // Usa UserLayout para todas sus rutas
-          <Route path="/" element={<UserLayout />}> 
-            {/* En la raíz (/), el usuario normal ve ComingSoon */}
-            <Route index element={<ComingSoonPage />} /> 
-            {/* La única otra ruta accesible es /profile */}
-            <Route path="profile" element={<UserProfilePage />} /> 
-            {/* Cualquier otra ruta redirige a la raíz (donde verá ComingSoon) */}
-            <Route path="*" element={<Navigate to="/" replace />} /> 
+          // Definir el layout una sola vez
+          <Route path="/" element={<UserLayout />}>
+            {
+              // Condición para determinar qué rutas hijas renderizar
+              user && user.canAccessPublicSite ? (
+                // *** USUARIO CON ACCESO PÚBLICO ***
+                <>
+                  <Route index element={<LandingPage />} /> 
+                  <Route path="news" element={<NewsPage />} />
+                  <Route path="market" element={<MarketPage />} />
+                  <Route path="lore" element={<LorePage />} />
+                  <Route path="team" element={<TeamPage />} />
+                  <Route path="events" element={<EventsPage />} /> 
+                  <Route path="chat" element={<ChatPage />} /> 
+                  <Route path="profile" element={<UserProfilePage />} />
+                  {/* Catch-all para esta sección */}
+                  <Route path="*" element={<Navigate to="/" replace />} /> 
+                </>
+              ) : (
+                // *** USUARIO NORMAL SIN ACCESO PÚBLICO ***
+                <>
+                  <Route index element={<ComingSoonPage />} /> 
+                  <Route path="profile" element={<UserProfilePage />} /> 
+                  {/* Catch-all para esta sección */}
+                  <Route path="*" element={<Navigate to="/" replace />} /> 
+                </>
+              )
+            }
           </Route>
         )
       ) : (

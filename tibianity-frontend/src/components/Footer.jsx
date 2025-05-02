@@ -22,18 +22,18 @@ const Footer = () => {
     <footer className="bg-[#111118] border-t border-[#2e2e3a] mt-auto" style={{boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.5), 0 -1px 3px rgba(189, 79, 255, 0.1)'}}>
       {/* Contenido principal del footer */}
       <div className="w-full max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Columna 1: Ilustración - Revertir a alineación izquierda en md */}
-          {/* Centrado en móvil (items-center), alineado al inicio en md (md:items-start) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Columna 1: Ilustración - Eliminada */}
+          {/* 
           <div className="col-span-1 md:col-span-1 flex flex-col items-center md:items-start">
             <img 
               src="/images/JosemiYSancocho.webp" 
               alt="Ilustración Josemi y Sancocho"
-              // Aumentar tamaño (h-28), añadir margen superior (mt-4)
               className="h-28 w-auto object-contain filter drop-shadow-lg mb-4 mt-4"
               loading="lazy"
             />
           </div>
+          */}
           
           {/* Columna 2: Enlaces rápidos */}
           <div className="col-span-1">
@@ -88,11 +88,12 @@ const Footer = () => {
             © {new Date().getFullYear()} Tibianity. Todos los derechos reservados.
           </p>
           <div className="flex space-x-4 mt-4 md:mt-0">
-            {['Términos de Servicio', 'Política de Privacidad'].map((item) => (
-              <a key={item} href={`/${item.toLowerCase().replace(/\s+/g, '-')}`} className="text-white/50 text-xs hover:text-white/80 transition-colors duration-300">
-                {item}
-              </a>
-            ))}
+            <a key="terminos" href="/terminos-de-servicio" className="text-white/50 text-xs hover:text-white/80 transition-colors duration-300">
+              Términos de Servicio
+            </a>
+            <a key="privacidad" href="/politica-de-privacidad" className="text-white/50 text-xs hover:text-white/80 transition-colors duration-300">
+              Política de Privacidad
+            </a>
           </div>
         </div>
       </div>

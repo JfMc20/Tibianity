@@ -23,15 +23,16 @@ class AdminController {
    */
   async getAllUsers(req: Request, res: Response): Promise<void> {
     try {
-      // Obtener usuarios con proyección (excluyendo datos sensibles si fuera necesario)
-      const users = await User.find().select('_id googleId name email photo isAdmin createdAt');
+      // Obtener usuarios incluyendo canAccessPublicSite
+      const users = await User.find().select('_id googleId name email photo isAdmin canAccessPublicSite createdAt');
       
       // Mapear los usuarios al formato esperado por el frontend
       const mappedUsers = users.map(user => ({
-        _id: user.googleId, // El frontend espera _id como identificador único
+        _id: user.googleId,
         name: user.name,
         email: user.email,
         isAdmin: user.isAdmin,
+        canAccessPublicSite: user.canAccessPublicSite,
         createdAt: user.createdAt.toISOString(),
         photo: user.photo
       }));
@@ -208,14 +209,100 @@ class AdminController {
         photo: updatedUser.photo
       };
 
-      console.log(`✅ Usuario degradado: ${updatedUser.name}`);
-      res.status(200).json({ success: true, message: 'Usuario degradado exitosamente.', user: mappedUser });
+      console.log(`✅ Administrador degradado a usuario: ${updatedUser.name}`);
+      res.status(200).json({ success: true, message: 'Administrador degradado a usuario.', user: mappedUser });
 
     } catch (error) {
       console.error('Error al degradar usuario:', error);
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Error interno del servidor al degradar usuario.'
+      });
+    }
+  }
+
+  /**
+   * Otorga acceso público al sitio a un usuario
+   * @param {Request} req - Espera :userId (googleId) en params
+   * @param {Response} res - Objeto de respuesta Express
+   * @returns {Promise<void>}
+   */
+  async grantPublicAccess(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params;
+    try {
+      const updatedUser = await User.findOneAndUpdate(
+        { googleId: userId },
+        { $set: { canAccessPublicSite: true } },
+        { new: true }
+      ).select('_id googleId name email photo isAdmin canAccessPublicSite createdAt'); // Incluir el nuevo campo
+
+      if (!updatedUser) {
+        res.status(404).json({ success: false, message: 'Usuario no encontrado para otorgar acceso.' });
+        return;
+      }
+
+      // Mapear para consistencia (aunque el frontend podría usar el objeto directo)
+      const mappedUser = {
+        _id: updatedUser.googleId,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        isAdmin: updatedUser.isAdmin,
+        canAccessPublicSite: updatedUser.canAccessPublicSite,
+        createdAt: updatedUser.createdAt.toISOString(),
+        photo: updatedUser.photo
+      };
+      
+      console.log(`✅ Acceso público otorgado a: ${updatedUser.name}`);
+      res.status(200).json({ success: true, message: 'Acceso público otorgado.', user: mappedUser });
+
+    } catch (error) {
+      console.error('Error al otorgar acceso público:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error interno del servidor al otorgar acceso.'
+      });
+    }
+  }
+
+  /**
+   * Revoca el acceso público al sitio a un usuario
+   * @param {Request} req - Espera :userId (googleId) en params
+   * @param {Response} res - Objeto de respuesta Express
+   * @returns {Promise<void>}
+   */
+  async revokePublicAccess(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params;
+    try {
+      const updatedUser = await User.findOneAndUpdate(
+        { googleId: userId },
+        { $set: { canAccessPublicSite: false } },
+        { new: true }
+      ).select('_id googleId name email photo isAdmin canAccessPublicSite createdAt'); // Incluir el nuevo campo
+
+      if (!updatedUser) {
+        res.status(404).json({ success: false, message: 'Usuario no encontrado para revocar acceso.' });
+        return;
+      }
+      
+      // Mapear para consistencia
+      const mappedUser = {
+        _id: updatedUser.googleId,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        isAdmin: updatedUser.isAdmin,
+        canAccessPublicSite: updatedUser.canAccessPublicSite,
+        createdAt: updatedUser.createdAt.toISOString(),
+        photo: updatedUser.photo
+      };
+
+      console.log(`✅ Acceso público revocado a: ${updatedUser.name}`);
+      res.status(200).json({ success: true, message: 'Acceso público revocado.', user: mappedUser });
+
+    } catch (error) {
+      console.error('Error al revocar acceso público:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error interno del servidor al revocar acceso.'
       });
     }
   }
