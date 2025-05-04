@@ -1,0 +1,12 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Librería UI Principal
+
+El proyecto utiliza **Headless UI** ([https://headlessui.com/](https://headlessui.com/)) para construir componentes de interfaz de usuario accesibles y sin estilos.
+
+Los estilos se aplican principalmente mediante clases de **Tailwind CSS** ([tailwind.config.js](mdc:tibianity-frontend/tailwind.config.js)).
+
+Los componentes reutilizables basados en Headless UI se pueden encontrar en `tibianity-frontend/src/components/common` o dentro de directorios específicos de características.

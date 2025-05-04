@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Fragment } from 'react';
 import { Link, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Bars3Icon, XMarkIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { Popover, Transition } from '@headlessui/react';
 import LoginGoogleButton from './common/LoginGoogleButton';
 
 /**
@@ -66,8 +67,10 @@ export const Logo = () => {
 
 /**
  * LoginButton Component - Clean login button with Google OAuth
+ * @param {Object} props
+ * @param {boolean} [props.iconOnly] - Si es true, muestra solo el icono de Google.
  */
-const LoginButton = () => {
+const LoginButton = ({ iconOnly = false }) => {
   const { user, isAuthenticated, login, logout, error } = useAuth();
   
   const isAdmin = user?.isAdmin === true;
@@ -111,51 +114,8 @@ const LoginButton = () => {
           </button>
         </div>
       ) : (
-        <LoginGoogleButton onClick={login} withGradientEffect={true} />
+        <LoginGoogleButton onClick={login} withGradientEffect={true} iconOnly={iconOnly} />
       )}
-    </div>
-  );
-};
-
-/**
- * ProjectButton Component - Highlighted button for registration
- */
-const ProjectButton = () => {
-  const [isHovered, setIsHovered] = useState(false);
-  const { isAuthenticated, login } = useAuth();
-  
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
-  
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-  };
-  
-  // No mostrar el botón si el usuario ya está autenticado
-  if (isAuthenticated) {
-    return null;
-  }
-  
-  return (
-    <div className="relative group ml-2">
-      <div 
-        className={`absolute -inset-[1px] rounded-md transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-        style={{
-          background: 'linear-gradient(to right, #60c8ff, #bd4fff)',
-          borderRadius: '6px',
-        }}
-      />
-      <button 
-        className="font-medium text-sm py-1.5 px-4 rounded-md border border-[#2e2e3a] bg-[#111118]/60 hover:bg-[#111118]/90 transition-all duration-300 relative text-white/90 hover:text-white"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={login}
-        aria-label="Register account"
-        tabIndex="0"
-      >
-        Register
-      </button>
     </div>
   );
 };
@@ -169,8 +129,6 @@ const ProjectButton = () => {
  * @param {boolean} [props.isAdminLayout] - Indica si está en el layout de admin (para mostrar toggle).
  */
 const Navbar = ({ togglePanel, isPanelOpen, isAdminLayout = false }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
   const navLinks = [
     { id: 'news', to: '/news', label: 'News' },
     { id: 'market', to: '/market', label: 'Market' },
@@ -179,20 +137,12 @@ const Navbar = ({ togglePanel, isPanelOpen, isAdminLayout = false }) => {
     { id: 'events', to: '/events', label: 'Events' }
   ];
   
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
-
   // Función combinada para el botón del panel admin en menú móvil
-  const handleAdminPanelToggleFromMobile = () => {
+  const handleAdminPanelToggleFromMobile = (closeMenu) => {
     if (togglePanel) {
       togglePanel(); // Llama a la función del layout
     }
-    closeMobileMenu(); // Cierra el menú móvil de la navbar
+    closeMenu(); // Cierra el popover
   };
   
   return (
@@ -237,81 +187,91 @@ const Navbar = ({ togglePanel, isPanelOpen, isAdminLayout = false }) => {
             ))}
           </div>
           
-          {/* Derecha: Botones (Login/Register) */} 
+          {/* Derecha: Botones (Login) */} 
           <div className="hidden md:flex md:items-center space-x-2 pr-1"> 
             <LoginButton />
-            <ProjectButton />
           </div>
 
-          {/* Botón Menú Móvil (Hamburguesa Navbar - Siempre visible en móvil) */}
+          {/* --- INICIO SECCIÓN MENÚ MÓVIL REFACTORIZADA CON HEADLESS UI --- */}
           <div className="md:hidden flex items-center"> 
-            <button
-              onClick={toggleMobileMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-              aria-controls="mobile-menu"
-              aria-expanded={isMobileMenuOpen}
-              aria-label="Abrir menú principal"
-            >
-              <span className="sr-only">Abrir menú principal</span>
-              {isMobileMenuOpen ? (
-                <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
+            <Popover className="relative">
+              {({ open, close }) => (
+                <>
+                  <Popover.Button
+                    className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                    aria-controls="mobile-menu-panel"
+                    aria-expanded={open}
+                    aria-label="Abrir menú principal"
+                  >
+                    <span className="sr-only">Abrir menú principal</span>
+                    {open ? (
+                      <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
+                    ) : (
+                      <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
+                    )}
+                  </Popover.Button>
+
+                  <Transition
+                    as={Fragment} // Usa Fragment para evitar divs extra
+                    enter="transition ease-out duration-200"
+                    enterFrom="opacity-0 translate-y-1"
+                    enterTo="opacity-100 translate-y-0"
+                    leave="transition ease-in duration-150"
+                    leaveFrom="opacity-100 translate-y-0"
+                    leaveTo="opacity-0 translate-y-1"
+                  >
+                    <Popover.Panel 
+                      id="mobile-menu-panel"
+                      className="absolute top-full right-0 mt-2 w-64 origin-top-right rounded-md bg-[#16161d] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-[#2e2e3a] z-50"
+                    >
+                      <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                        {navLinks.map((link) => (
+                          <RouterNavLink
+                            key={link.id}
+                            to={link.to}
+                            onClick={close} // Cierra el popover al hacer clic
+                            className={({ isActive }) => 
+                              `block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 
+                              ${isActive 
+                                ? 'bg-gradient-to-r from-blue-600/30 to-purple-700/30 text-white' 
+                                : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'}`
+                            }
+                            aria-label={`Navegar a ${link.label}`}
+                          >
+                            {link.label}
+                          </RouterNavLink>
+                        ))}
+                        {/* Opción para abrir/cerrar Admin Panel (Solo si isAdminLayout) */}
+                        {isAdminLayout && (
+                          <button
+                            onClick={() => handleAdminPanelToggleFromMobile(close)} // Pasa la función close
+                            className="w-full text-left flex items-center gap-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors duration-200"
+                          >
+                            <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" /> 
+                            Admin Panel
+                          </button>
+                        )}
+                      </div>
+                      {/* Botones en menú móvil */}
+                      <div className="pt-4 border-gray-700">
+                        {/* Línea con gradiente */}
+                        <div className="h-px w-full mb-4" style={{
+                          background: 'linear-gradient(to right, #60c8ff, #bd4fff, #60c8ff)',
+                          boxShadow: '0 0 8px rgba(96, 200, 255, 0.4), 0 0 12px rgba(189, 79, 255, 0.3)'
+                        }}></div>
+                        {/* Contenedor de botones con padding */}
+                        <div className="px-3 pb-3 flex items-center space-x-2">
+                          <LoginButton iconOnly={true} />
+                        </div>
+                      </div>
+                    </Popover.Panel>
+                  </Transition>
+                </>
               )}
-            </button>
+            </Popover>
           </div>
+          {/* --- FIN SECCIÓN MENÚ MÓVIL REFACTORIZADA --- */}
 
-        </div>
-      </div>
-
-      {/* Panel Menú Móvil (Navbar) */}
-      <div 
-        className={`md:hidden absolute top-full left-0 w-full bg-[#111118] border-b border-[#2e2e3a] shadow-lg transition-all duration-300 ease-in-out transform ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0 pointer-events-none'}`}
-        id="mobile-menu"
-      >
-        {/* Links de Navegación Móvil */}
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {navLinks.map((link) => (
-            <RouterNavLink
-              key={link.id}
-              to={link.to}
-              onClick={closeMobileMenu} 
-              className={({ isActive }) => 
-                `block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 
-                ${isActive 
-                  ? 'bg-gradient-to-r from-blue-600/30 to-purple-700/30 text-white' 
-                  : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'}`
-              }
-              aria-label={`Navegar a ${link.label}`}
-            >
-              {link.label}
-            </RouterNavLink>
-          ))}
-          {/* Opción para abrir/cerrar Admin Panel (Solo si isAdminLayout) */}
-          {isAdminLayout && (
-            <button
-              onClick={handleAdminPanelToggleFromMobile}
-              className="w-full text-left flex items-center gap-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors duration-200"
-            >
-              <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" /> {/* Icono ejemplo */} 
-              Admin Panel
-            </button>
-          )}
-        </div>
-         {/* Botones en menú móvil */}
-         {/* Modificar el contenedor: remover borde superior, añadir línea con gradiente */}
-        <div className="pt-4 border-gray-700"> {/* Remover border-t y pb-3 implícitamente al reestructurar */}
-          {/* Línea con gradiente del Footer */}
-          <div className="h-px w-full mb-4" style={{
-            background: 'linear-gradient(to right, #60c8ff, #bd4fff, #60c8ff)',
-            boxShadow: '0 0 8px rgba(96, 200, 255, 0.4), 0 0 12px rgba(189, 79, 255, 0.3)'
-          }}></div>
-           {/* Contenedor de botones con padding inferior */}
-          <div className="px-3 pb-3 flex items-center space-x-2"> 
-             {/* Reutilizar LoginButton y ProjectButton */}
-            <LoginButton />
-            <ProjectButton />
-          </div>
         </div>
       </div>
     </header>

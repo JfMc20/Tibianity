@@ -26,6 +26,7 @@ import EventsPage from './pages/EventsPage'; // <-- Importar nueva página
 // Importar páginas legales
 import TermsOfService from './pages/legal/TermsOfService'; 
 import PrivacyPolicy from './pages/legal/PrivacyPolicy'; 
+import SubscriptionConfirmationPage from './pages/SubscriptionConfirmationPage'; // Importar la nueva página
 
 // Componente de pantalla de carga simple
 const LoadingScreen = () => (
@@ -35,7 +36,7 @@ const LoadingScreen = () => (
 );
 
 // Placeholder para páginas no encontradas
-const NotFound = () => <div className="p-6 text-white text-center min-h-screen flex items-center justify-center bg-[#060919]">404 - Página no encontrada</div>;
+const NotFoundPage = () => <div className="p-6 text-white text-center min-h-screen flex items-center justify-center bg-[#060919]">404 - Página no encontrada</div>;
 
 /**
  * Contenido principal con la lógica de enrutamiento refactorizada.
@@ -43,6 +44,7 @@ const NotFound = () => <div className="p-6 text-white text-center min-h-screen f
 const AppContent = () => {
   const { loading, isAuthenticated, user } = useAuth();
   const isAdmin = user?.isAdmin === true;
+  const canAccess = user?.canAccessPublicSite === true;
 
   if (loading) {
     return <LoadingScreen />;
@@ -88,7 +90,7 @@ const AppContent = () => {
               {/* /admin/profile muestra el perfil */}
               <Route path="profile" element={<UserProfilePage />} /> 
               {/* Catch-all para /admin/* desconocido */}
-              <Route path="*" element={<NotFound />} /> 
+              <Route path="*" element={<NotFoundPage />} /> 
             </Route>
 
             {/* Catch-all global para admin si no coincide con / o /admin/* */}
@@ -138,8 +140,83 @@ const AppContent = () => {
         </Route>
       )}
 
-      {/* Un 404 global final, por si acaso */}
-       <Route path="*" element={<NotFound />} /> 
+      {/* Rutas de Confirmación de Suscripción (Públicas) */}
+      <Route path="/subscription-confirmed" element={<GuestLayout><SubscriptionConfirmationPage /></GuestLayout>} />
+      <Route path="/subscription-invalid" element={<GuestLayout><SubscriptionConfirmationPage /></GuestLayout>} />
+      <Route path="/subscription-error" element={<GuestLayout><SubscriptionConfirmationPage /></GuestLayout>} />
+
+      {/* Rutas de Admin - Eliminar ProtectedRoute wrapper */}
+      <Route 
+        path="/admin/*" 
+        element={
+          // Quitar ProtectedRoute, la lógica ya está afuera
+          // <ProtectedRoute isAuthenticated={isAuthenticated} isAdminRoute={true} userRole={isAdmin ? 'admin' : 'user'}>
+          <AdminLayout>
+            <Routes>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="email" element={<EmailSenderPage />} />
+              <Route path="*" element={<NotFoundPage />} /> 
+            </Routes>
+          </AdminLayout>
+          // </ProtectedRoute>
+        }
+      />
+
+      {/* Rutas de Usuario Autenticado (Normal) - Eliminar ProtectedRoute wrapper */}
+      <Route 
+        path="/profile"
+        element={
+          // Quitar ProtectedRoute, la lógica ya está afuera
+          // <ProtectedRoute isAuthenticated={isAuthenticated} userRole={isAdmin ? 'admin' : 'user'}>
+            <UserLayout>
+              <UserProfilePage />
+            </UserLayout>
+          // </ProtectedRoute>
+        }
+      />
+      
+      {/* Rutas Públicas (o restringidas según acceso) */}
+      <Route 
+        path="/news" 
+        element={isAuthenticated && (isAdmin || canAccess) ? <UserLayout><NewsPage /></UserLayout> : <GuestLayout><ComingSoonPage /></GuestLayout>}
+      />
+      <Route 
+        path="/market" 
+        element={isAuthenticated && (isAdmin || canAccess) ? <UserLayout><MarketPage /></UserLayout> : <GuestLayout><ComingSoonPage /></GuestLayout>}
+      />
+       <Route 
+        path="/lore" 
+        element={isAuthenticated && (isAdmin || canAccess) ? <UserLayout><LorePage /></UserLayout> : <GuestLayout><ComingSoonPage /></GuestLayout>}
+      />
+       <Route 
+        path="/team" 
+        element={isAuthenticated && (isAdmin || canAccess) ? <UserLayout><TeamPage /></UserLayout> : <GuestLayout><ComingSoonPage /></GuestLayout>}
+      />
+      <Route 
+        path="/events" 
+        element={isAuthenticated && (isAdmin || canAccess) ? <UserLayout><EventsPage /></UserLayout> : <GuestLayout><ComingSoonPage /></GuestLayout>}
+      />
+     
+      {/* Ruta Raíz (/) */}
+      <Route 
+        path="/" 
+        element={
+          isAuthenticated 
+            ? isAdmin ? <AdminLayout><LandingPage /></AdminLayout> : <GuestLayout><ComingSoonPage /></GuestLayout> 
+            : <GuestLayout><ComingSoonPage /></GuestLayout>
+        }
+      />
+      
+      {/* Ruta Catch-all para 404 (Usar NotFoundPage) */}
+      <Route 
+        path="*" 
+        element={
+           isAuthenticated 
+            // Usar NotFoundPage también para admin aquí
+            ? isAdmin ? <AdminLayout><NotFoundPage /></AdminLayout> : <GuestLayout><ComingSoonPage /></GuestLayout> 
+            : <GuestLayout><ComingSoonPage /></GuestLayout>
+        }
+       />
     </Routes>
   );
 };

@@ -30,11 +30,14 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 - **Componentes Interactivos**: Elementos UI con efectos hover, animaciones y gradientes
 - **Diseño Responsive**: Optimizado para todos los dispositivos
 - **Integración con Backend**: Conexión con el backend para obtener datos de noticias y gestionar la autenticación
-- **Suscripción por Correo Electrónico**: Página ComingSoon
+- **Suscripción por Correo Electrónico**: Página ComingSoon con **formulario mejorado (Headless UI, validación, feedback visual)**.
+- **Doble Opt-In**: Proceso de confirmación de suscripción vía email con páginas de feedback en el frontend.
+- **Botón Flotante de WhatsApp**: Con efectos visuales y animaciones.
 - **Panel de Administración**:
   - Visualización de usuarios y sesiones
   - Gestión de roles de administrador
   - Envío de correos masivos a suscriptores
+  - **Limpieza de Suscriptores**: Funcionalidad para eliminar suscriptores pendientes o por email.
 
 ## 🛠️ Tecnologías
 
@@ -50,6 +53,7 @@ Tibianity es una plataforma web para una comunidad de creadores de contenido enf
 - **Visualización de Datos (Admin)**: Chart.js (`react-chartjs-2`)
 - **Selección de Fechas (Admin)**: React Datepicker (`react-datepicker`)
 - **Manejo de Fechas**: Date-fns
+- **Componentes UI**: Headless UI (`@headlessui/react`) para algunos componentes (formularios, menús).
 
 ## 🔧 Instalación
 
@@ -146,6 +150,7 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │   │   ├── /LandingPage  # Componentes específicos de la Landing Page (Hero, Lore, Services, Team)
   │   │   ├── /Admin        # Componentes específicos del panel admin (SidePanelMenu, UserTable, SessionChart, MetricCard, FilterControls)
   │   │   ├── /ComingSoon   # Componentes específicos de la página ComingSoon (SubscriptionForm)
+  │   │   ├── /common/Alerts # Componentes para mostrar feedback (ValidationAlert)
   │   │   ├── Navbar.jsx    # Barra de navegación principal (Usada en todos los layouts, integra toggle de admin)
   │   │   └── Footer.jsx    # Pie de página global
   │   │
@@ -165,6 +170,7 @@ node --experimental-json-modules src/scripts/testBackend.mjs
   │   │   ├── LorePage.jsx          # Página de lore
   │   │   ├── TeamPage.jsx          # Página de equipo
   │   │   ├── ChatPage.jsx          # Página de chat
+  │   │   ├── SubscriptionConfirmationPage.jsx # Página para mostrar el resultado de la confirmación de suscripción
   │   │   └── /Admin                # Páginas del panel de admin (AdminDashboard, EmailSenderPage)
   │   │
   │   ├── /context          # Contextos de React (estado global)
@@ -220,7 +226,10 @@ node --experimental-json-modules src/scripts/testBackend.mjs
 
 ### Componentes Comunes (`src/components/common/`)
 - **SocialIcon.jsx**: Icono de red social reutilizable.
-- **LoginGoogleButton.jsx**: Botón estándar "Login con Google", con opción de efecto hover.
+- **LoginGoogleButton.jsx**: Botón estándar "Login con Google", ahora usa `GradientButton`.
+- **GradientButton.jsx**: Botón reutilizable con borde gradiente y efecto de clic.
+- **AnimatedBackgroundLines.jsx**: Componente para generar el fondo animado con líneas.
+- **ValidationAlert.jsx** (`src/components/common/Alerts/`): Componente reutilizable para mostrar mensajes de éxito, error, etc., con accesibilidad (`aria-live`).
 
 ### Admin Components (`src/components/Admin/`)
 - **SidePanelMenu.jsx**: Menú lateral usado en `AdminLayout`.

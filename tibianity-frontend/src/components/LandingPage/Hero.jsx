@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// Eliminado: import FlowbiteCarousel from '../common/FlowbiteCarousel';
 
 /**
  * Hero Section Component
@@ -31,13 +32,13 @@ const Hero = () => {
     }
   ];
   
-  // Efecto para cambiar automáticamente los slides
+  // Reintroducir efecto para cambiar automáticamente los slides
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % slides.length);
-    }, 3000); // Cambiar cada 3 segundos
+    }, 3000); // Cambiar cada 3 segundos (ajustar si es necesario)
     
-    return () => clearInterval(interval);
+    return () => clearInterval(interval); // Limpieza al desmontar
   }, [slides.length]);
   
   return (
@@ -120,67 +121,58 @@ const Hero = () => {
             }}
           />
           
-          {/* Contenedor principal - más rectangular */}
-          <div 
-            className="border border-transparent rounded-lg p-0 flex flex-col items-center justify-center bg-[#111118]/70 relative z-10 overflow-hidden"
-            style={{ 
-              width: '100%',
-              height: '0',
-              paddingBottom: '40%', /* Relación 5:2 (más rectangular que antes) */
-              position: 'relative'
-            }}
-          >
-            {/* Imágenes del carrusel - Una por cada slide */}
-            {slides.map((slide, index) => (
-              <div 
-                key={slide.id}
-                className={`absolute inset-0 w-full h-full transition-opacity duration-700 ${
-                  activeSlide === index ? 'opacity-100 z-10' : 'opacity-0'
-                }`}
-              >
-                <img 
-                  src={slide.image} 
-                  alt={slide.alt}
-                  className="absolute inset-0 w-full h-full object-cover"
+          {/* Contenedor del Carrusel */}
+          <div className="relative z-10 overflow-hidden rounded-lg h-56 sm:h-64 xl:h-80 2xl:h-96">
+            {/* Contenedor para los slides (viewport) */}
+            <div className="relative w-full h-full">
+              {slides.map((slide, index) => (
+                <div
+                  key={slide.id}
+                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${ 
+                    activeSlide === index ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none' 
+                  }`}
+                >
+                  {/* Imagen de fondo */}
+                  <img 
+                    src={slide.image} 
+                    alt={slide.alt}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  {/* Contenido superpuesto (caja de texto) */}
+                  <div className="absolute inset-0 flex items-start justify-center z-20 pt-8 sm:pt-10 md:pt-14">
+                    <div className="px-5 py-4 rounded-lg bg-[#0a1a2a]/40 backdrop-blur-sm max-w-md text-center animated-title border border-[#00E0FF]/40 glow-effect">
+                      <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 relative">
+                        <span className="text-shimmer">{slide.title}</span>
+                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-[1px] w-2/3 bg-gradient-to-r from-transparent via-[#00E0FF] to-transparent"></div>
+                      </h3>
+                      <p className="text-[#00E0FF]/90 text-base sm:text-lg leading-relaxed">
+                        {slide.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Indicadores (Puntos) */}
+            <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 z-30 flex space-x-3">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveSlide(index)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ease-in-out ${ 
+                    activeSlide === index ? 'bg-white scale-110' : 'bg-white/50 hover:bg-white/75' 
+                  }`}
+                  aria-label={`Ir al slide ${index + 1}`}
+                  style={{ 
+                    boxShadow: activeSlide === index ? '0 0 6px rgba(255, 255, 255, 0.7)' : 'none' 
+                  }}
                 />
-              </div>
-            ))}
-            
-            {/* Título mejorado con animaciones */}
-            <div className="absolute inset-0 flex items-start justify-center z-20 pt-10 md:pt-14">
-              <div className="px-5 py-4 rounded-lg bg-[#0a1a2a]/40 backdrop-blur-sm max-w-md text-center animated-title border border-[#00E0FF]/40 glow-effect">
-                <h3 className="text-2xl md:text-3xl font-bold mb-2 relative">
-                  <span className="text-shimmer">{slides[activeSlide].title}</span>
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-[1px] w-2/3 bg-gradient-to-r from-transparent via-[#00E0FF] to-transparent"></div>
-                </h3>
-                <p className="text-[#00E0FF]/90 text-lg leading-relaxed">
-                  {slides[activeSlide].description}
-                </p>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-        
-        {/* Puntos del carrusel más cercanos al contenedor */}
-        <div className="flex justify-center mt-2">
-          <div className="flex space-x-4">
-            {/* Renderizar los puntos del carrusel */}
-            {slides.map((slide) => (
-              <div 
-                key={slide.id}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  activeSlide === slide.id 
-                    ? 'bg-white scale-125' 
-                    : 'bg-white/30'
-                }`}
-                onClick={() => setActiveSlide(slide.id)}
-                style={{
-                  boxShadow: activeSlide === slide.id ? '0 0 5px rgba(255, 255, 255, 0.8)' : 'none',
-                  cursor: 'pointer'
-                }}
-              ></div>
-            ))}
-          </div>
+
         </div>
       </div>
     </section>

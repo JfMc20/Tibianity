@@ -1,15 +1,15 @@
 # Stage 1: Build the React application
-FROM node:20-alpine AS builder
+FROM node:18-slim AS builder
 WORKDIR /app
 
 # Copiar archivos de dependencias
 COPY package.json package-lock.json ./
 
-# Instalar dependencias
-RUN npm ci
-
-# Copiar el resto del código de la aplicación
+# Copiar el resto del código de la aplicación ANTES de instalar
 COPY . .
+
+# Instalar dependencias (después de copiar todo el código)
+RUN npm install
 
 # Construir la aplicación para producción
 RUN npm run build

@@ -13,10 +13,4 @@ Para visualizar y gestionar la base de datos MongoDB de forma gráfica, se recom
 
 ---
 
-## TODO Frontend (Errores Rutas y UI Admin)
-
-- [x] Corregir rutas de admin en `App.jsx`:
-  - [x] `/admin` debe mostrar `AdminDashboard`.
-  - [x] `/admin/profile` debe funcionar y mostrar `UserProfilePage`.
-  - [x] Ruta raíz `/` para admin debe mostrar `LandingPage`.
-- [x] Implementar toggle (ocultar/mostrar) para `SidePanelMenu` en `AdminLayout`. 
+Chequiar redirecciones y rutas

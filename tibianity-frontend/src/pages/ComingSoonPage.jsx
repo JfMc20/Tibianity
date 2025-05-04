@@ -1,11 +1,17 @@
 import React from 'react';
 // Asegúrate de que la ruta al componente ComingSoon sea correcta
 import ComingSoonComponent from '../components/ComingSoon/ComingSoon'; 
+import WhatsAppFloatingButton from '../components/ComingSoon/WhatsAppFloatingButton'; // Importar el nuevo botón
 
 const ComingSoonPage = () => {
-  // Puedes pasar props si el componente los necesita, como `isAuthenticated`
-  // Aquí asumimos que para la página, si se muestra, es porque no está autenticado.
-  return <ComingSoonComponent isAuthenticated={false} />;
+  const whatsappNumber = "+58 412-0971841";
+
+  return (
+    <>
+      <ComingSoonComponent isAuthenticated={false} />
+      <WhatsAppFloatingButton phoneNumber={whatsappNumber} />
+    </>
+  );
 };
 
 export default ComingSoonPage; 

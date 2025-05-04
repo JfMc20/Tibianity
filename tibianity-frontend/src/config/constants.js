@@ -18,5 +18,6 @@ export const AUTH_API = {
 
 export const ADMIN_API = {
   USERS: `${API_URL}/admin/users`,
-  SESSIONS: `${API_URL}/admin/sessions`
+  SESSIONS: `${API_URL}/admin/sessions`,
+  SUBSCRIBERS: `${API_URL}/admin/subscribers`
 }; 

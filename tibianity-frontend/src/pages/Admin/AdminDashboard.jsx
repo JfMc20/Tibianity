@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import axios from 'axios';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js';
 import { useAuth } from '../../context/AuthContext';
@@ -9,12 +9,17 @@ import FilterControls from '../../components/Admin/FilterControls';
 import SessionChart from '../../components/Admin/SessionChart';
 import UserTable from '../../components/Admin/UserTable';
 import { format, subDays, startOfDay, parseISO, isValid } from 'date-fns';
+import { Field, Label, Input, Button } from '@headlessui/react';
+import ValidationAlert from '../../components/common/Alerts/ValidationAlert';
 
 // Registrar ChartJS 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement);
 
-// Configurar instancia de Axios 
-const apiClient = axios.create({ withCredentials: true });
+// Configurar instancia de Axios localmente para este componente
+const apiClient = axios.create({
+  withCredentials: true // Importante para rutas admin protegidas por sesión/cookie
+});
+
 const USE_MOCK_API = false;
 
 const AdminDashboard = () => {
@@ -24,7 +29,7 @@ const AdminDashboard = () => {
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState(new Date());
   const [selectedUser, setSelectedUser] = useState('all');
-  const [metrics, setMetrics] = useState({ totalUsers: 0, sessionsToday: 0, sessionsLast7Days: 0, totalSessions: 0 });
+  const [metrics, setMetrics] = useState({ totalUsers: 0, sessionsToday: 0, sessionsLast7Days: 0, totalSessions: 0, activeSessions: 0, pendingSubscribers: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null); 
@@ -34,6 +39,12 @@ const AdminDashboard = () => {
   const { user: currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const isAdmin = currentUser?.isAdmin === true;
+  
+  // Estados para la limpieza de suscriptores
+  const [emailToDelete, setEmailToDelete] = useState('');
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupMessage, setCleanupMessage] = useState('');
+  const [cleanupError, setCleanupError] = useState('');
   
   // --- Lógica de Carga --- 
   const loadData = useCallback(async () => {
@@ -83,7 +94,7 @@ const AdminDashboard = () => {
     const last7Days = subDays(today, 6);
     const sessionsToday = sessions.filter(s => s.startTime && isValid(parseISO(s.startTime)) && parseISO(s.startTime) >= today).length;
     const sessionsLast7Days = sessions.filter(s => s.startTime && isValid(parseISO(s.startTime)) && parseISO(s.startTime) >= last7Days).length;
-    setMetrics({ totalUsers: users.length, sessionsToday, sessionsLast7Days, totalSessions: filteredSessions.length }); 
+    setMetrics({ totalUsers: users.length, sessionsToday, sessionsLast7Days, totalSessions: filteredSessions.length, activeSessions: sessions.length, pendingSubscribers: '?' }); 
   }, [sessions, users, filteredSessions]); // Dependencia correcta
 
   // Preparar Datos para Gráficos (Ahora puede usar filteredSessions)
@@ -168,6 +179,44 @@ const AdminDashboard = () => {
     } finally { setActionLoading(null); }
   }, []);
 
+  // --- Handlers para Limpieza de Suscriptores ---
+  const handleDeletePending = useCallback(async () => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar TODOS los suscriptores pendientes de confirmación? Esta acción no se puede deshacer.')) return;
+    
+    setCleanupLoading(true);
+    setCleanupMessage('');
+    setCleanupError('');
+    try {
+      const response = await apiClient.delete(`${ADMIN_API.SUBSCRIBERS}/pending`);
+      if (!response.data?.success) throw new Error(response.data?.message || 'Error desconocido');
+      setCleanupMessage(response.data.message || 'Suscriptores pendientes eliminados.');
+    } catch (err) {
+      setCleanupError(`Error al limpiar pendientes: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setCleanupLoading(false);
+    }
+  }, []);
+
+  const handleDeleteByEmail = useCallback(async (e) => {
+    e.preventDefault(); // Prevenir submit de formulario si se usa
+    if (!emailToDelete || !window.confirm(`¿Estás seguro de que quieres eliminar al suscriptor con email ${emailToDelete}?`)) return;
+
+    setCleanupLoading(true);
+    setCleanupMessage('');
+    setCleanupError('');
+    try {
+      const encodedEmail = encodeURIComponent(emailToDelete);
+      const response = await apiClient.delete(`${ADMIN_API.SUBSCRIBERS}/email/${encodedEmail}`);
+      if (!response.data?.success) throw new Error(response.data?.message || 'Error desconocido');
+      setCleanupMessage(response.data.message || `Suscriptor ${emailToDelete} eliminado.`);
+      setEmailToDelete(''); // Limpiar input
+    } catch (err) {
+      setCleanupError(`Error al eliminar ${emailToDelete}: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setCleanupLoading(false);
+    }
+  }, [emailToDelete]); // Dependencia del email
+
   // --- Redirección --- 
   useEffect(() => {
     if (!authLoading && !isAdmin && isAuthenticated) {
@@ -184,8 +233,9 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-6"> 
-      <h1 className="text-3xl font-bold text-white">Dashboard Principal</h1>
+    <div className="space-y-8 p-4 md:p-6">
+      <h1 className="text-2xl font-semibold text-white">Panel de Administración</h1>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"> 
         <MetricCard title="Total Usuarios" value={metrics.totalUsers} color="border-blue-500" />
         <MetricCard title="Sesiones Hoy" value={metrics.sessionsToday} color="border-green-500" />
@@ -201,18 +251,6 @@ const AdminDashboard = () => {
           onEndDateChange={handleEndDateChange}   
           onUserChange={handleUserChange}         
       />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> 
-        <SessionChart 
-          data={chartData} 
-          type="bar" 
-          title="Sesiones por Fecha" 
-        />
-        <SessionChart 
-          data={chartData} 
-          type="line" 
-          title="Tendencia de Sesiones" 
-        /> 
-      </div>
       <UserTable 
           users={users}
           sessions={sessions} 
@@ -225,6 +263,70 @@ const AdminDashboard = () => {
           actionError={actionError}
           actionSuccess={actionSuccess}
       />
+
+      {/* --- NUEVA SECCIÓN: Limpieza de Suscriptores --- */}
+      <div className="bg-[#16161d] border border-[#2e2e3a] rounded-lg shadow-md p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-white mb-4">Limpieza de Suscriptores</h2>
+        
+        {/* Mensajes de feedback para limpieza */} 
+        <div aria-live="polite" className="space-y-2 mb-4">
+           {cleanupMessage && <ValidationAlert message={cleanupMessage} type="success" />} 
+           {cleanupError && <ValidationAlert message={cleanupError} type="error" />} 
+        </div>
+
+        {/* Acción: Limpiar Pendientes */} 
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-white/80">Eliminar todos los suscriptores que no han confirmado su correo.</p>
+          <Button 
+            onClick={handleDeletePending}
+            disabled={cleanupLoading}
+            className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {cleanupLoading ? 'Limpiando...' : 'Limpiar Pendientes'}
+          </Button>
+        </div>
+
+        <hr className="border-gray-600" />
+
+        {/* Acción: Eliminar por Email */} 
+        <form onSubmit={handleDeleteByEmail} className="space-y-3">
+          <Field>
+            <Label htmlFor="email-to-delete" className="block text-sm font-medium text-white/80">Eliminar suscriptor específico por email:</Label>
+            <div className="mt-1 flex rounded-md shadow-sm">
+              <Input
+                id="email-to-delete"
+                type="email"
+                value={emailToDelete}
+                onChange={(e) => setEmailToDelete(e.target.value)}
+                required
+                disabled={cleanupLoading}
+                placeholder="correo@ejemplo.com"
+                className="relative block w-full appearance-none rounded-l-md border border-[#2e2e3a] bg-[#111118]/80 px-3 py-2 text-white placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm disabled:opacity-50"
+              />
+              <Button 
+                type="submit"
+                disabled={cleanupLoading || !emailToDelete}
+                className="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-600 bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                 {cleanupLoading ? 'Eliminando...' : 'Eliminar'} 
+              </Button>
+            </div>
+          </Field>
+        </form>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> 
+        <SessionChart 
+          data={chartData} 
+          type="bar" 
+          title="Sesiones por Fecha" 
+        />
+        <SessionChart 
+          data={chartData} 
+          type="line" 
+          title="Tendencia de Sesiones" 
+        /> 
+      </div>
     </div>
   );
 };
