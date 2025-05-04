@@ -3,13 +3,14 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import helmet from 'helmet';
 import passport from './config/passport.config';
 import newsRoutes from './routes/news.routes';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import subscribeRoutes from './routes/subscribe.routes';
 import { connectDB } from './config/db';
-import { globalLimiter } from './config/rateLimiters.config';
+import { globalLimiter, subscribeLimiter } from './config/rateLimiters.config';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -47,18 +48,27 @@ const corsOptions = {
 };
 
 // Middlewares
+app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json());
 
 // Confiar en el primer proxy (Traefik) para determinar si la conexión es segura
 app.set('trust proxy', 1);
 
-// Aplicar Rate Limiter Global ANTES de las sesiones/rutas principales
-// Asegurarse que se aplique después de 'trust proxy' si es necesario para identificar IPs correctamente
-// Y después de middlewares básicos como cors y express.json
-app.use('/api', globalLimiter); 
-app.use('/auth', globalLimiter); // Aplicar también a /auth
-app.use('/admin', globalLimiter); // Aplicar también a /admin
+// Aplicar Rate Limiters
+// Global para /api (excluyendo /api/subscribe que tendrá el suyo), /auth, /admin
+app.use('/api', (req, res, next) => { 
+  // Skip limiter si la ruta es /api/subscribe
+  if (req.path === '/subscribe') {
+    return next();
+  }
+  globalLimiter(req, res, next);
+});
+app.use('/auth', globalLimiter); // Mantener global para auth (o usar authLimiter si se prefiere)
+app.use('/admin', globalLimiter); // Mantener global para admin
+
+// Limiter específico para /api/subscribe ANTES de montar la ruta
+app.use('/api/subscribe', subscribeLimiter);
 
 // Configurar sesiones
 app.use(

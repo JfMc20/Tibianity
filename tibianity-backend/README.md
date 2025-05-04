@@ -1,9 +1,9 @@
 # Backend de Tibianity
 
-Backend para la aplicación Tibianity que proporciona API para integrarse con TibiaData, ofrece autenticación mediante Google OAuth y gestiona suscripciones de correo.
+Backend para la aplicación Tibianity que proporciona API para integrarse con TibiaData, ofrece autenticación mediante Google OAuth y gestiona suscripciones de correo **con doble opt-in**.
 
 ## Descripción General
-El backend de Tibianity es una API REST desarrollada en Node.js con TypeScript. Proporciona servicios para obtener datos del juego Tibia utilizando la API TibiaData, ofrece autenticación mediante Google OAuth, almacena información de usuarios y suscripciones de correo en MongoDB, y permite el envío de correos a suscriptores a través de Resend.
+El backend de Tibianity es una API REST desarrollada en Node.js con TypeScript. Proporciona servicios para obtener datos del juego Tibia utilizando la API TibiaData, ofrece autenticación mediante Google OAuth, almacena información de usuarios y suscripciones de correo **(con verificación de doble opt-in)** en MongoDB, y permite el envío de correos a suscriptores **activos** a través de Resend. Se han implementado medidas de seguridad como **`helmet`** para cabeceras HTTP y **`rate limiting`** en endpoints sensibles.
 
 ## Estructura del Proyecto
 
@@ -68,6 +68,7 @@ backend/
   - `isAuthenticated`: Verifica que el usuario esté autenticado
   - `isAdmin`: Verifica que el usuario tenga privilegios de administrador
   - Controla el acceso a rutas sensibles del sistema
+- **rateLimiter.config.ts**: Configuración para `express-rate-limit`. Define limitadores generales y específicos (ej: para suscripciones).
 
 ### 5. Rutas
 - **auth.routes.ts**: Rutas para autenticación con Google OAuth
@@ -87,10 +88,13 @@ backend/
   - `/admin/users/:userId/demote`: Degrada un admin a usuario.
   - `/admin/users/:userId/grant-access`: Permite el acceso público a un usuario.
   - `/admin/users/:userId/revoke-access`: Revoca el acceso público a un usuario.
-  - `/admin/send-newsletter`: Envía un correo a todos los suscriptores.
+  - `/admin/send-newsletter`: Envía un correo a todos los suscriptores **activos**.
+  - `DELETE /admin/subscribers/pending`: Elimina todos los suscriptores pendientes de confirmación.
+  - `DELETE /admin/subscribers/email/:email`: Elimina un suscriptor específico por su email.
 
 - **subscribe.routes.ts**: Ruta pública para nuevas suscripciones
-  - `POST /api/subscribe`: Registra un nuevo correo electrónico de suscriptor.
+  - `POST /api/subscribe`: Registra un nuevo correo electrónico de suscriptor (estado 'pending') e inicia el proceso de doble opt-in. **Protegida por rate limiting específico**.
+  - `GET /api/subscribe/confirm/:token`: Confirma la suscripción de un usuario validando el token.
 
 ### 6. Controladores
 - **news.controller.ts**: Gestiona las solicitudes de noticias
@@ -105,10 +109,14 @@ backend/
   - Obtención de listado de usuarios (incluyendo `canAccessPublicSite`) y sesiones.
   - Gestión de roles (promover/degradar).
   - Gestión de acceso público (permitir/revocar).
-  - Lógica para iniciar el envío de correos a suscriptores (usa Resend).
+  - Lógica para iniciar el envío de correos a suscriptores (usa Resend, **solo a 'active'**).
+  - **Nuevas funciones para limpieza**: `deletePendingSubscribers` y `deleteSubscriberByEmail`.
 
 - **subscribe.controller.ts**: Gestiona el registro de nuevos suscriptores.
-  - Validación y almacenamiento de correos en la base de datos.
+  - Validación y almacenamiento de correos en la base de datos **con estado 'pending'**.
+  - **Generación de token de confirmación** y expiración.
+  - **Envío de email de confirmación** usando Resend.
+  - **Nueva función `confirmSubscription`**: Valida el token, actualiza el estado del suscriptor a 'active' y redirige al frontend.
 
 ### 7. Servicios
 - **tibiadata.service.ts**: Servicio para interactuar con la API de TibiaData
@@ -116,6 +124,11 @@ backend/
   - Adaptación de datos entre formatos de API y aplicación
   - Manejo de errores y logging detallado
 - **Resend Integration**: La lógica para enviar correos usando el SDK de Resend se encuentra directamente en `admin.controller.ts` (método `sendNewsletter`).
+- `RESEND_API_KEY`: Clave API para el servicio de envío de correos Resend.
+- `RESEND_FROM_EMAIL`: Dirección de correo (verificada en Resend) usada como remitente.
+- `CLIENT_CONFIRMATION_URL`: URL base del frontend para la página de confirmación (ej: `http://localhost:3000/subscription-confirmed`).
+- `CLIENT_INVALID_TOKEN_URL`: URL del frontend para token inválido/expirado.
+- `CLIENT_ERROR_URL`: URL del frontend para errores genéricos de confirmación.
 
 ### 8. Script de Sincronización de Noticias (sync-news.ts)
 - Script para obtener y traducir noticias de Tibia
@@ -144,7 +157,7 @@ backend/
 - `UserProfile`: Interfaz para perfiles de usuario
 - `IUser`: Interfaz para el modelo de usuario en MongoDB (incluye `canAccessPublicSite?`)
 - `ISessionLog`: Interfaz para registros de sesiones en MongoDB
-- `ISubscriber`: Interfaz para el modelo de suscriptor en MongoDB.
+- `ISubscriber`: Interfaz para el modelo de suscriptor en MongoDB. Incluye ahora campos `status` ('pending' | 'active'), `confirmationToken`, `tokenExpires`.
 
 ## Instalación
 
@@ -232,7 +245,8 @@ Por defecto el servidor (cuando se ejecuta standalone) se ejecutará en http://l
 ### Públicos
 - `GET /api/news` - Obtiene las últimas noticias.
 - `GET /api/news/:id` - Obtiene una noticia específica por ID.
-- `POST /api/subscribe` - Registra un nuevo suscriptor.
+- `POST /api/subscribe` - Registra un nuevo suscriptor (inicia doble opt-in). **Limitado por Tasa**.
+- `GET /api/subscribe/confirm/:token` - Confirma la suscripción vía email.
 
 ### Autenticación
 - `GET /auth/google` - Inicia el flujo de autenticación con Google
@@ -244,7 +258,9 @@ Por defecto el servidor (cuando se ejecuta standalone) se ejecutará en http://l
 - `GET /admin/sessions` - Obtiene todos los logs de sesiones (con filtros opcionales)
 - `PATCH /admin/users/:userId/promote` - Promueve un usuario a admin.
 - `PATCH /admin/users/:userId/demote` - Degrada un admin a usuario.
-- `POST /admin/send-newsletter` - Inicia el envío de un correo a todos los suscriptores.
+- `POST /admin/send-newsletter` - Inicia el envío de un correo a todos los suscriptores **activos**.
+- `DELETE /admin/subscribers/pending` - Elimina suscriptores pendientes.
+- `DELETE /admin/subscribers/email/:email` - Elimina un suscriptor por email.
 
 ## Sistema de Registro de Sesiones
 
@@ -277,4 +293,6 @@ La verificación de administrador está implementada en el middleware `isAdmin` 
 - Axios
 - Passport (Google OAuth)
 - OpenRouter API (para traducciones)
-- Resend (para envío de correos) 
+- Resend (para envío de correos)
+- **Helmet** (seguridad de cabeceras HTTP)
+- **Express Rate Limit** (prevención de ataques de fuerza bruta/abuso) 

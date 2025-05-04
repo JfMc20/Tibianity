@@ -308,7 +308,7 @@ class AdminController {
   }
 
   /**
-   * Envía un correo a todos los suscriptores usando Resend
+   * Envía un correo a todos los suscriptores activos usando Resend
    * @param {Request} req - Objeto de solicitud Express (espera subject y body en el cuerpo)
    * @param {Response} res - Objeto de respuesta Express
    * @returns {Promise<void>}
@@ -328,15 +328,17 @@ class AdminController {
     }
 
     try {
-      const subscribers = await Subscriber.find().select('email -_id'); 
-      const emails = subscribers.map(sub => sub.email);
+      // Obtener SOLO suscriptores activos
+      const activeSubscribers = await Subscriber.find({ status: 'active' }).select('email').lean();
 
-      if (emails.length === 0) {
-        res.status(404).json({ success: false, message: 'No hay suscriptores registrados para enviar correos.' });
+      if (activeSubscribers.length === 0) {
+        res.status(404).json({ success: false, message: 'No hay suscriptores activos para enviar el boletín.' });
         return;
       }
 
-      console.log(`INFO: Iniciando envío de newsletter con asunto "${subject}" a ${emails.length} suscriptores desde ${fromEmail}.`);
+      const emails = activeSubscribers.map(sub => sub.email);
+
+      console.log(`INFO: Iniciando envío de newsletter con asunto "${subject}" a ${emails.length} suscriptores activos desde ${fromEmail}.`);
 
       const { data, error } = await resend.emails.send({
         from: fromEmail,      
@@ -352,14 +354,87 @@ class AdminController {
         return;
       }
 
-      console.log(`✅ Newsletter enviado exitosamente a ${emails.length} suscriptores. ID de envío: ${data?.id}`);
-      res.status(200).json({ success: true, message: `Correo enviado exitosamente a ${emails.length} suscriptores.` });
+      console.log(`✅ Newsletter enviado exitosamente a ${emails.length} suscriptores activos. ID de envío: ${data?.id}`);
+      res.status(200).json({ success: true, message: `Correo enviado exitosamente a ${emails.length} suscriptores activos.` });
 
     } catch (error) {
       console.error('Error general al procesar el envío de newsletter:', error);
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Error interno del servidor al procesar el envío.'
+      });
+    }
+  }
+
+  /**
+   * Elimina todos los suscriptores con estado 'pending'.
+   * @param {Request} _req - Objeto de solicitud Express (no usado aquí)
+   * @param {Response} res - Objeto de respuesta Express
+   * @returns {Promise<void>}
+   */
+  async deletePendingSubscribers(_req: Request, res: Response): Promise<void> {
+    try {
+      const result = await Subscriber.deleteMany({ status: 'pending' });
+      const count = result.deletedCount || 0;
+      
+      console.log(`🧹 Limpieza: Se eliminaron ${count} suscriptores pendientes.`);
+      res.status(200).json({ 
+        success: true, 
+        message: `Se eliminaron ${count} suscriptores pendientes.`,
+        deletedCount: count
+      });
+
+    } catch (error) {
+      console.error('Error al eliminar suscriptores pendientes:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error interno del servidor al limpiar suscriptores.'
+      });
+    }
+  }
+
+  /**
+   * Elimina un suscriptor específico por su email.
+   * @param {Request} req - Objeto de solicitud Express (espera :email en params)
+   * @param {Response} res - Objeto de respuesta Express
+   * @returns {Promise<void>}
+   */
+  async deleteSubscriberByEmail(req: Request, res: Response): Promise<void> {
+    const { email } = req.params;
+
+    if (!email) {
+      res.status(400).json({ success: false, message: 'Se requiere un email para eliminar.' });
+      return;
+    }
+    
+    // Validar formato básico de email (opcional, ya que viene de admin)
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+        res.status(400).json({ success: false, message: 'El formato del email no es válido.' });
+        return;
+    }
+
+    try {
+      const result = await Subscriber.deleteOne({ email: email.toLowerCase() }); // Buscar en minúsculas
+      
+      if (result.deletedCount === 0) {
+        console.log(`🧹 Intento de eliminar email no encontrado: ${email}`);
+        res.status(404).json({ success: false, message: `Suscriptor con email ${email} no encontrado.` });
+        return;
+      }
+
+      console.log(`🧹 Suscriptor eliminado: ${email}`);
+      res.status(200).json({ 
+        success: true, 
+        message: `Suscriptor con email ${email} eliminado correctamente.`,
+        deletedCount: result.deletedCount
+      });
+
+    } catch (error) {
+      console.error(`Error al eliminar suscriptor ${email}:`, error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error interno del servidor al eliminar suscriptor.'
       });
     }
   }

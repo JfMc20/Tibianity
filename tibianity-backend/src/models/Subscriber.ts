@@ -4,6 +4,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ISubscriber extends Document {
   email: string;
   subscribedAt: Date;
+  status: 'pending' | 'active'; // Nuevo campo de estado
+  confirmationToken?: string;   // Token para confirmar (opcional)
+  tokenExpires?: Date;          // Fecha de expiración del token (opcional)
 }
 
 // Esquema Mongoose para Subscriber
@@ -22,8 +25,26 @@ const SubscriberSchema: Schema = new Schema({
   subscribedAt: {
     type: Date,
     default: Date.now // Fecha de suscripción por defecto
+  },
+  // Nuevos campos para doble opt-in
+  status: {
+    type: String,
+    enum: ['pending', 'active'], // Solo permite estos dos valores
+    default: 'pending',          // Por defecto, la suscripción está pendiente
+    required: true
+  },
+  confirmationToken: {
+    type: String,
+    required: false // Solo necesario cuando status es 'pending'
+  },
+  tokenExpires: {
+    type: Date,
+    required: false // Solo necesario cuando status es 'pending'
   }
 });
+
+// Opcional: Añadir un índice al token para búsquedas rápidas
+SubscriberSchema.index({ confirmationToken: 1 });
 
 // Crear y exportar el modelo Subscriber
 const Subscriber = mongoose.model<ISubscriber>('Subscriber', SubscriberSchema);

@@ -73,4 +73,19 @@ router.post('/send-newsletter',
   adminController.sendNewsletter
 );
 
+/**
+ * @route DELETE /admin/subscribers/pending
+ * @desc Elimina todos los suscriptores pendientes de confirmación
+ * @access Privado (Solo administradores)
+ */
+router.delete('/subscribers/pending', isAuthenticated, isAdmin, adminController.deletePendingSubscribers);
+
+/**
+ * @route DELETE /admin/subscribers/email/:email
+ * @desc Elimina un suscriptor específico por su email
+ * @access Privado (Solo administradores)
+ */
+// Asegurarse que :email se parsea correctamente (URL encoding puede ser necesario en el frontend)
+router.delete('/subscribers/email/:email', isAuthenticated, isAdmin, adminController.deleteSubscriberByEmail);
+
 export default router; 
